@@ -1,0 +1,5 @@
+TIPS:
+ejecutar en test:
+docker-compose run --rm --service-ports odoo bash
+odoo.py -d LibraSoft_produccion1 -u librasoft-financiera-cheques
+

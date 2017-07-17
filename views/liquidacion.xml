@@ -1,0 +1,150 @@
+<openerp>
+  <data>
+    <!-- Liquidacions - Formularios de creacion  -->
+
+    <record id="view_tree_liquidacion" model="ir.ui.view">
+        <field name="name">Liquidacion Tree</field>
+        <field name="model">liquidacion</field>
+        <field name="arch" type="xml">
+            <tree string="Liquidaciones">
+                <field name="id"/>
+                <field name="fecha_liquidacion"/>
+                <field name="partner_id"/>
+                <field name="active"/>
+                <field name="state"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_form_liquidacion" model="ir.ui.view">
+        <field name="name">Liquidacion Form</field>
+        <field name="model">liquidacion</field>
+        <field name="arch" type="xml">
+            <form string="Liquidacion">
+                <header>
+                    <button name="confirmar" string="Confirmar" states="cotizacion" type="object" />
+                    <button name="editar" string="Cotizar" states="confirmada" type="object" />
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                  <xpath expr="." position="inside">
+                    <link rel="stylesheet" href="/librasoft-financiera-cheques/static/src/css/liquidacion.css"/>
+                  </xpath>
+                    <!--<div class="levis">
+                      <xpath expr="." position="inside">
+                          <link rel="stylesheet" href="/librasoft-financiera-cheques/static/src/css/liquidacion.css"/>
+                      </xpath>
+                      <b>HOLA - ACA ESTAMOS</b>
+                    </div>-->
+                    <group>
+                        <field name="id"/>
+                        <field name="fecha_liquidacion" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" context="{'fecha_liquidacion': fecha_liquidacion}"/>
+                        <field name="partner_id" attrs="{'readonly': [('state', '!=', 'cotizacion')]}"/>
+                        <field name="analytic_id"/>
+                        <field name="journal_id" attrs="{'readonly': [('state', '!=', 'cotizacion')]}"/>
+
+                        <field name="move_id"/>
+                        <field name="invoice_id"/>
+                    </group>
+                    <notebook>
+                        <page string="Cheques">
+                            <field name="cheques_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')]}">
+                                <tree string="Cheques" editable="bottom" >
+                                    <field name="name" invisible="1"/>
+                                    <field name="owner_name" invisible="1"/>
+                                    <field name="owner_vat" invisible="1"/>
+                                    <field name="journal_id" invisible="1"/>
+                                    <field name="state"/>
+                                    <field name="number"/>
+                                    <field name="firmante_id"/>
+                                    <field name="bank_id"/>
+                                    <field name="amount" sum="Total"/>
+                                    <field name="issue_date"/>
+                                    <field name="payment_date"/>
+                                    <field name="fecha_acreditacion"/>
+                                    <field name="dias" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
+                                    <field name="tasa_fija"/>
+                                    <field name="monto_fijo" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
+                                    <field name="tasa_mensual"/>
+                                    <field name="monto_mensual" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
+                                    <field name="vat_tax_id"/>
+                                    <field name="monto_iva" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
+                                    <field name="monto_neto" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="inerith_view_form_liquidacion" model="ir.ui.view">
+        <field name="name">Liquidacion Form - Inerith</field>
+        <field name="model">liquidacion</field>
+        <field name="type">form</field>
+        <field name="inherit_id" ref="view_form_liquidacion"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="attributes">
+              <attribute name="class">oe_form_sheet_full_screen</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="liquidacion_action" model="ir.actions.act_window">
+        <field name="name">Liqudiaciones</field>
+        <field name="res_model">liquidacion</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_tree_liquidacion"/>
+    </record>
+
+
+    <!-- Menu Principal del modulo (barra superior) - Financiera -->
+    <menuitem id="menu_financiera2" name="Financiera - Cheques" />
+    
+    <!-- SubMenu 1 - Liquidaciones -->
+    <menuitem id="smenu_liquidaciones" name="Liquidaciones" parent="menu_financiera2"  sequence="0" />
+    <menuitem id="smenu_liquidaciones_action" name="Liquidaciones" parent="smenu_liquidaciones" action="liquidacion_action"  sequence="0" />
+
+    <!-- actions opening views on models -->
+    <!--
+    <record model="ir.actions.act_window" id="librasoft-financiera-cheques.action_window">
+      <field name="name">librasoft-financiera-cheques window</field>
+      <field name="res_model">librasoft-financiera-cheques.librasoft-financiera-cheques</field>
+      <field name="view_mode">tree,form</field>
+    </record>
+    -->
+
+    <!-- server action to the one above -->
+    <!--
+    <record model="ir.actions.server" id="librasoft-financiera-cheques.action_server">
+      <field name="name">librasoft-financiera-cheques server</field>
+      <field name="model_id" ref="model_librasoft-financiera-cheques_librasoft-financiera-cheques"/>
+      <field name="code">
+        action = {
+          "type": "ir.actions.act_window",
+          "view_mode": "tree,form",
+          "res_model": self._name,
+        }
+      </field>
+    </record>
+    -->
+
+    <!-- Top menu item -->
+    <!--
+    <menuitem name="librasoft-financiera-cheques" id="librasoft-financiera-cheques.menu_root"/>
+    -->
+    <!-- menu categories -->
+    <!--
+    <menuitem name="Menu 1" id="librasoft-financiera-cheques.menu_1" parent="librasoft-financiera-cheques.menu_root"/>
+    <menuitem name="Menu 2" id="librasoft-financiera-cheques.menu_2" parent="librasoft-financiera-cheques.menu_root"/>
+    -->
+    <!-- actions -->
+    <!--
+    <menuitem name="List" id="librasoft-financiera-cheques.menu_1_list" parent="librasoft-financiera-cheques.menu_1"
+              action="librasoft-financiera-cheques.action_window"/>
+    <menuitem name="Server to list" id="librasoft-financiera-cheques" parent="librasoft-financiera-cheques.menu_2"
+              action="librasoft-financiera-cheques.action_server"/>
+    -->
+  </data>
+</openerp>
