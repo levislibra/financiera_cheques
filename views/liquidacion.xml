@@ -26,7 +26,7 @@
                     <button name="editar" string="Cotizar" states="confirmada" type="object" />
                     <field name="state" widget="statusbar"/>
                 </header>
-                <sheet>
+                <sheet class="oe_form_sheet_full_screen">
                   <xpath expr="." position="inside">
                     <link rel="stylesheet" href="/librasoft-financiera-cheques/static/src/css/liquidacion.css"/>
                   </xpath>
@@ -48,12 +48,13 @@
                     </group>
                     <notebook>
                         <page string="Cheques">
-                            <field name="cheques_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')]}">
+                            <field name="cheque_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')]}">
                                 <tree string="Cheques" editable="bottom" >
                                     <field name="name" invisible="1"/>
                                     <field name="owner_name" invisible="1"/>
                                     <field name="owner_vat" invisible="1"/>
                                     <field name="journal_id" invisible="1"/>
+                                    <field name="type" editable="1"/>
                                     <field name="state"/>
                                     <field name="number"/>
                                     <field name="firmante_id"/>
@@ -76,18 +77,6 @@
                     </notebook>
                 </sheet>
             </form>
-        </field>
-    </record>
-
-    <record id="inerith_view_form_liquidacion" model="ir.ui.view">
-        <field name="name">Liquidacion Form - Inerith</field>
-        <field name="model">liquidacion</field>
-        <field name="type">form</field>
-        <field name="inherit_id" ref="view_form_liquidacion"/>
-        <field name="arch" type="xml">
-            <xpath expr="//sheet" position="attributes">
-              <attribute name="class">oe_form_sheet_full_screen</attribute>
-            </xpath>
         </field>
     </record>
 
