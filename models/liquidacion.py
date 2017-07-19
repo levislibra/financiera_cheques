@@ -2,9 +2,11 @@
 
 from openerp import models, fields, api
 import time
+from datetime import datetime, timedelta
+
+from pprint import pprint
 import logging
 from openerp.osv import orm
-from pprint import pprint
 _logger = logging.getLogger(__name__)
 
 class firmante(models.Model):
@@ -30,8 +32,51 @@ class AccountCheck(models.Model):
     tasa_mensual = fields.Float('% Mensual')
     monto_mensual = fields.Float(string='Interes', compute='_monto_mensual')
     vat_tax_id = fields.Many2one('account.tax', '% IVA')
-    monto_iva = fields.Integer('IVA', compute='_monto_iva')
+    monto_iva = fields.Float('IVA', compute='_monto_iva')
     monto_neto = fields.Float(string='Neto', compute='_monto_neto')
+
+
+    @api.onchange('liquidacion_id.fecha', 'fecha_acreditacion')
+    def _dias(self):
+        fecha_inicial_str = False
+        fecha_final_str = False
+        _logger.error("_calcular_descuento_dias")
+        if self.liquidacion_id.fecha != False:
+           fecha_inicial_str = str(self.liquidacion_id.fecha)
+        if self.fecha_acreditacion != False:
+           fecha_final_str = str(self.fecha_acreditacion)
+        if fecha_inicial_str != False and fecha_final_str != False:
+            formato_fecha = "%Y-%m-%d"
+            fecha_inicial = datetime.strptime(fecha_inicial_str, formato_fecha)
+            fecha_final = datetime.strptime(fecha_final_str, formato_fecha)
+            diferencia = fecha_final - fecha_inicial
+            ultimos_dias = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+            i = 0
+            fines_de_mes = []
+            while fecha_inicial < fecha_final:
+                ano_actual = fecha_inicial.year
+                mes_actual = fecha_inicial.month
+                dia_actual_fin_de_mes = ultimos_dias[mes_actual-1]
+                fecha_fin_de_mes_str = str(ano_actual)+"-"+str(mes_actual)+"-"+str(dia_actual_fin_de_mes)
+                fecha_fin_de_mes = datetime.strptime(fecha_fin_de_mes_str, formato_fecha)
+                if fecha_fin_de_mes >= fecha_inicial and fecha_fin_de_mes <= fecha_final:
+                    fines_de_mes.append(fecha_fin_de_mes)
+
+                if mes_actual == 12:
+                    mes_proximo = 1
+                    ano_proximo = ano_actual + 1
+                else:
+                    mes_proximo = mes_actual + 1
+                    ano_proximo = ano_actual
+                dia_proximo = 15
+                fecha_inicial_str = str(ano_proximo)+"-"+str(mes_proximo)+"-"+str(dia_proximo)
+                fecha_inicial = datetime.strptime(fecha_inicial_str, formato_fecha)
+                i = i + 1
+            if diferencia.days > 0:
+                self.dias = diferencia.days
+            else:
+                self.dias = 0
+
 
     @api.one
     @api.depends('monto_mensual', 'vat_tax_id')
@@ -50,21 +95,26 @@ class AccountCheck(models.Model):
     	self.monto_mensual = self.dias * ((self.tasa_mensual / 30) / 100) * self.amount
 
     @api.one
-    @api.depends('monto_fijo', 'monto_mensual', 'monto_iva')
+    @api.depends('amount', 'monto_fijo', 'monto_mensual', 'monto_iva')
     def _monto_neto(self):
     	self.monto_neto = self.amount - self.monto_fijo - self.monto_mensual - self.monto_iva
 
     @api.onchange('firmante_id')
-    def _set_name_cuit(self):
+    def _set_defaults(self):
     	print('names')
     	self.owner_name = self.firmante_id.name
+        print self.firmante_id
     	self.owner_vat = self.firmante_id.cuit
-    	if (self.owner_vat != False and self.owner_name != False):
-    		self.name = self.owner_name + " " + self.owner_vat
-    	print self.liquidacion_id
-        if (self.liquidacion_id.journal_id != False):
+    	if self.owner_name != False:
+    		self.name = "Ch nro " + str(self.number) + " " + self.owner_name
+        if self.liquidacion_id.journal_id != False:
         	self.journal_id = self.liquidacion_id.journal_id
-        self.type = 'third_check'
+
+    @api.onchange('number')
+    def _set_name_number(self):
+        print self.owner_name
+        if self.owner_name != False:
+            self.name = "Cheque nro " + str(self.number) + " " + self.owner_name
 
     @api.onchange('payment_date')
     def _fecha_acreditacion(self):
@@ -75,7 +125,7 @@ class Liquidacion(models.Model):
     _name = 'liquidacion'
 
     id = fields.Integer('Nro Liquidacion')
-    fecha_liquidacion = fields.Date('Fecha', required=True, default=lambda *a: time.strftime('%Y-%m-%d'))
+    fecha = fields.Date('Fecha', required=True, default=lambda *a: time.strftime('%Y-%m-%d'))
     active = fields.Boolean('Activa', default=True)
     partner_id = fields.Many2one('res.partner', 'Cliente', required=True)
     journal_id = fields.Many2one('account.journal', 'Diario', required=True)
@@ -84,6 +134,36 @@ class Liquidacion(models.Model):
     invoice_id = fields.Many2one('account.invoice', 'Factura', readonly=True)
     cheque_ids = fields.One2many('account.check', 'liquidacion_id', 'Cheques', ondelete='cascade')
     state = fields.Selection([('cotizacion', 'Cotizacion'), ('confirmada', 'Confirmada'), ('pagado', 'Pagado'), ('cancelada', 'Cancelada')], default='cotizacion', string='Status', readonly=True, track_visibility='onchange')
+
+    def get_bruto(self):
+        bruto = 0
+        for cheque in self.cheque_ids:
+            bruto += cheque.amount
+        return bruto
+
+    def get_gasto(self):
+        gasto = 0
+        for cheque in self.cheque_ids:
+            gasto += cheque.monto_fijo
+        return gasto
+
+    def get_interes(self):
+        interes = 0
+        for cheque in self.cheque_ids:
+            interes += cheque.monto_mensual
+        return interes
+
+    def get_iva(self):
+        iva = 0
+        for cheque in self.cheque_ids:
+            iva += cheque.monto_iva
+        return iva
+
+    def get_neto(self):
+        neto = 0
+        for cheque in self.cheque_ids:
+            neto += cheque.monto_neto
+        return neto
 
     @api.onchange('journal_id')
     def _set_journal_id(self):
@@ -99,33 +179,22 @@ class Liquidacion(models.Model):
         cr = self.env.cr
         uid = self.env.uid
         check_all = self.pool.get('account.check')
-        liquidacion_id = self.id
-        cheque_ids = check_all.search(cr, uid, [('liquidacion_id', '=', liquidacion_id)])
+        cheque_ids = check_all.search(cr, uid, [('liquidacion_id', '=', self.id)])
         for cheque in cheque_ids:
-            check_all.write(cr, uid, [cheque], {'type':'third_check'}, context=None)
+            datenow = datetime.now()
+            val = {
+                'check_id': cheque,
+                'date': datenow,
+                'operation': 'holding',
+                'partner_id': self.partner_id.id,
+                'notes': "Liquidacion " + str(self.id),
+            }
+            new_operation_id = self.env['account.check.operation'].create(val)
+            #check._add_operation('holding', payment, partner=payment.partner_id, date=payment.payment_date)
+            check_all.write(cr, uid, [cheque], {'type':'third_check', 'operation_ids': [(4, new_operation_id.id, False)]}, context=None)
         return True
 
-#    	@api.multi
-#	def confirmar(self, cr, uid, ids, context=None):
-#            _logger.error("CONFIRMAR2")
-#            check_all = self.pool.get('account.check')
-#            liquidacion_id = ids[0]
-#            cheque_ids = check_all.search(cr, uid, [('liquidacion_id', '=', liquidacion_id)])
-#            print cheque_ids
-#            self.write(cr, uid, ids, {'state':'confirmada'}, context=None)
-#            check_all.write(cr, uid, cheque_ids, {'type':'third_check'}, context=None)
-#            return True
-
-	def editar(self, cr, uid, ids, context=None):
-		self.write(cr, uid, ids, {'state':'cotizacion'}, context=None)
-		return True
-
-	#@api.multi
-    @api.onchange('cheque_ids')
-    def _compute_check_type(self):
-        print "cheque_ids asign third_check"
-        print self.cheque_ids
-        for cheque in self.cheque_ids:
-            print "cheque " + str(cheque.number)
-            cheque.type = 'third_check'
+    def editar(self, cr, uid, ids, context=None):
+        self.write(cr, uid, ids, {'state':'cotizacion'}, context=None)
+        return True
 

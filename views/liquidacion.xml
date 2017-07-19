@@ -8,7 +8,7 @@
         <field name="arch" type="xml">
             <tree string="Liquidaciones">
                 <field name="id"/>
-                <field name="fecha_liquidacion"/>
+                <field name="fecha"/>
                 <field name="partner_id"/>
                 <field name="active"/>
                 <field name="state"/>
@@ -38,9 +38,9 @@
                     </div>-->
                     <group>
                         <field name="id"/>
-                        <field name="fecha_liquidacion" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" context="{'fecha_liquidacion': fecha_liquidacion}"/>
+                        <field name="fecha" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" context="{'fecha': fecha}"/>
                         <field name="partner_id" attrs="{'readonly': [('state', '!=', 'cotizacion')]}"/>
-                        <field name="analytic_id"/>
+                        <field name="analytic_id" attrs="{'readonly': [('state', '!=', 'cotizacion')]}"/>
                         <field name="journal_id" attrs="{'readonly': [('state', '!=', 'cotizacion')]}"/>
 
                         <field name="move_id"/>
@@ -53,8 +53,8 @@
                                     <field name="name" invisible="1"/>
                                     <field name="owner_name" invisible="1"/>
                                     <field name="owner_vat" invisible="1"/>
-                                    <field name="journal_id" invisible="1"/>
-                                    <field name="type" editable="1"/>
+                                    <field name="journal_id"/>
+                                    <field name="type"/>
                                     <field name="state"/>
                                     <field name="number"/>
                                     <field name="firmante_id"/>
