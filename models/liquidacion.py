@@ -194,7 +194,10 @@ class Liquidacion(models.Model):
             check_all.write(cr, uid, [cheque], {'type':'third_check', 'operation_ids': [(4, new_operation_id.id, False)]}, context=None)
         return True
 
-    def editar(self, cr, uid, ids, context=None):
+    def pagar(self, cr, uid, ids, context=None):
         self.write(cr, uid, ids, {'state':'cotizacion'}, context=None)
         return True
 
+    def editar(self, cr, uid, ids, context=None):
+        self.write(cr, uid, ids, {'state':'cotizacion'}, context=None)
+        return True
