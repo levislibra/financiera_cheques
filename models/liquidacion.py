@@ -26,7 +26,7 @@ class AccountCheck(models.Model):
     firmante_id = fields.Many2one('firmante', 'Firmante')
 
     fecha_acreditacion = fields.Date('Acreditacion')
-    dias = fields.Integer(string='Dias')
+    dias = fields.Integer(string='Dias', compute='_dias')
     tasa_fija = fields.Float('% Fija')
     monto_fijo = fields.Float(string='Gasto', compute='_monto_fijo')
     tasa_mensual = fields.Float('% Mensual')
@@ -35,8 +35,8 @@ class AccountCheck(models.Model):
     monto_iva = fields.Float('IVA', compute='_monto_iva')
     monto_neto = fields.Float(string='Neto', compute='_monto_neto')
 
-
-    @api.onchange('liquidacion_id.fecha', 'fecha_acreditacion')
+    @api.one
+    @api.depends('liquidacion_id.fecha', 'fecha_acreditacion')
     def _dias(self):
         fecha_inicial_str = False
         fecha_final_str = False
@@ -76,6 +76,8 @@ class AccountCheck(models.Model):
                 self.dias = diferencia.days
             else:
                 self.dias = 0
+            print "DIAS: "
+            print self.dias
 
 
     @api.one
