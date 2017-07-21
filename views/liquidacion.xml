@@ -38,14 +38,20 @@
                       <b>HOLA - ACA ESTAMOS</b>
                     </div>-->
                     <group>
+                      <group>
                         <field name="id"/>
                         <field name="fecha" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" context="{'fecha': fecha}"/>
                         <field name="partner_id" attrs="{'readonly': [('state', '!=', 'cotizacion')]}"/>
                         <field name="analytic_id" attrs="{'readonly': [('state', '!=', 'cotizacion')]}"/>
                         <field name="journal_id" attrs="{'readonly': [('state', '!=', 'cotizacion')]}"/>
-
+                      </group>
+                      <group>
+                        <field name="receiptbook_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
+                        <field name="payment_method_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
+                        <field name="currency_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
                         <field name="move_id"/>
                         <field name="invoice_id"/>
+                      </group>
                     </group>
                     <notebook>
                         <page string="Cheques">
@@ -87,6 +93,7 @@
         <field name="view_mode">tree,form</field>
         <field name="view_id" ref="view_tree_liquidacion"/>
     </record>
+
 
 
     <!-- Menu Principal del modulo (barra superior) - Financiera -->
