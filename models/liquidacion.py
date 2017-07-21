@@ -3,6 +3,8 @@
 from openerp import models, fields, api
 import time
 from datetime import datetime, timedelta
+from openerp.exceptions import UserError
+from openerp.tools.translate import _
 
 from pprint import pprint
 import logging
@@ -15,12 +17,12 @@ class firmante(models.Model):
 	name = fields.Char("Nombre", size=30, required=True)
 	cuit = fields.Char("Cuit", size=20, required=True)
 
-class AccountCheck(models.Model):
+class AccountPayment(models.Model):
     # This OpenERP object inherits from cheques.de.terceros
     # to add a new float field
-    _inherit = 'account.check'
-    _name = 'account.check'
-    _description = 'Opciones extras de cheques para calculo del descuento'
+    _inherit = 'account.payment'
+    _name = 'account.payment'
+    _description = 'Opciones extras de cheques para calculo de financiera'
 
     liquidacion_id = fields.Many2one('liquidacion', 'Liquidacion id')
     firmante_id = fields.Many2one('firmante', 'Firmante')
@@ -34,6 +36,38 @@ class AccountCheck(models.Model):
     vat_tax_id = fields.Many2one('account.tax', '% IVA')
     monto_iva = fields.Float('IVA', compute='_monto_iva')
     monto_neto = fields.Float(string='Neto', compute='_monto_neto')
+
+    @api.model
+    def default_get(self, fields):
+        rec = super(AccountPayment, self).default_get(fields)
+        context = dict(self._context or {})
+        active_model = context.get('active_model')
+        active_ids = context.get('active_ids')
+        active_id = context.get('active_id')
+        fecha = context.get('fecha')
+        partner_id = context.get('partner_id')
+        journal_id = context.get('journal_id')
+        receiptbook_id = context.get('receiptbook_id')
+        payment_method_id = context.get('payment_method_id')
+        currency_id = context.get('currency_id')
+
+        if active_model == 'liquidacion':
+            print "valores"
+            rec.update({
+                'payment_type': 'inbound',
+                'partner_type': 'customer',
+                'partner_id': partner_id,
+                'journal_id': journal_id,
+                'payment_method_id': payment_method_id,
+                'payment_method_code': 'received_third_check',
+                'receiptbook_id': receiptbook_id,
+                'payment_date': fecha,
+                #'communication': 'Liquidacion Nro ' + str(self.id),
+                'currency_id': currency_id,
+                #'commercial_partner_id': cheque.type,
+            })
+        return rec
+
 
     @api.one
     @api.depends('liquidacion_id.fecha', 'fecha_acreditacion')
@@ -101,27 +135,16 @@ class AccountCheck(models.Model):
     def _monto_neto(self):
     	self.monto_neto = self.amount - self.monto_fijo - self.monto_mensual - self.monto_iva
 
-    @api.onchange('firmante_id')
-    def _set_defaults(self):
-    	print('names')
-    	self.owner_name = self.firmante_id.name
-        print self.firmante_id
-    	self.owner_vat = self.firmante_id.cuit
-    	if self.owner_name != False:
-    		self.name = "Ch nro " + str(self.number) + " " + self.owner_name
-        if self.liquidacion_id.journal_id != False:
-        	self.journal_id = self.liquidacion_id.journal_id
-
-    @api.onchange('number')
+    @api.onchange('check_number')
     def _set_name_number(self):
-        print self.owner_name
-        if self.owner_name != False:
-            self.name = "Cheque nro " + str(self.number) + " " + self.owner_name
+        print self.check_owner_name
+        if self.check_owner_name != False:
+            self.check_name = str(self.check_number) + " " + self.check_owner_name
 
-    @api.onchange('payment_date')
+    @api.onchange('check_payment_date')
     def _fecha_acreditacion(self):
         print("payment_date change")
-        self.fecha_acreditacion = self.payment_date
+        self.fecha_acreditacion = self.check_payment_date
 
 class Liquidacion(models.Model):
     _name = 'liquidacion'
@@ -134,7 +157,7 @@ class Liquidacion(models.Model):
     analytic_id = fields.Many2one('account.analytic.account', 'Cuenta analítica')
     move_id = fields.Many2one('account.move', 'Asiento', readonly=True)
     invoice_id = fields.Many2one('account.invoice', 'Factura', readonly=True)
-    cheque_ids = fields.One2many('account.check', 'liquidacion_id', 'Cheques', ondelete='cascade')
+    cheque_ids = fields.One2many('account.payment', 'liquidacion_id', 'Cheques', ondelete='cascade')
     state = fields.Selection([('cotizacion', 'Cotizacion'), ('confirmada', 'Confirmada'), ('pagado', 'Pagado'), ('cancelada', 'Cancelada')], default='cotizacion', string='Status', readonly=True, track_visibility='onchange')
     receiptbook_id = fields.Many2one('account.payment.receiptbook', "ReceiptBook")
     payment_method_id = fields.Many2one('account.payment.method', "Payment Method")
@@ -187,57 +210,13 @@ class Liquidacion(models.Model):
 
     def confirmar_cheques(self):
         #._add_operation('holding', payment, partner=payment.partner_id, date=payment.payment_date)
-        datenow = datetime.now()
+        #self.partner_id.commercial_partner_id = self.partner_id.id
         for cheque in self.cheque_ids:
-            #Generamos el Pago que se realiza con el cheque creado
-            #display_name = self.receiptbook_id.document_type_id.doc_code_prefix + " " + self.receiptbook_id.prefix + 
-            val_payment = {
-                #'display_name': display_name,
-                'payment_type': 'inbound',
-                'partner_type': 'customer',                
-                'partner_id': self.partner_id.id,
-                'journal_id': self.journal_id.id,
-                'payment_method_id': self.payment_method_id.id,
-                'payment_method_code': 'received_third_check',
-                'amount': cheque.amount,
-                'receiptbook_id': self.receiptbook_id.id,
-                'payment_date': datenow,
-                'communication': 'Liquidacion Nro ' + str(self.id),
-                'currency_id': self.currency_id.id,
-                'check_ids': [(4, cheque.id, False)],
-                'check_bank_id': cheque.bank_id.id,
-                'check_name': cheque.name,
-                'check_number': cheque.number,
-                'check_number_readonly': cheque.number,
-                'check_owner_name': cheque.owner_name,
-                'check_owner_vat': cheque.owner_vat,
-                'check_payment_date': cheque.payment_date,
-                'check_type': cheque.type,
-            }
-            new_payment_id = self.env['account.payment'].create(val_payment)
-            #new_payment_id.state = 'posted'
-            cheque.number = 77777733
-            new_payment_id.post()
-            print "New payment"
-            print new_payment_id
-
-            new_payment_id.check_id = cheque
-            print "check payment 22"
-
-
-            val = {
-                'check_id': cheque.id,
-                'date': datenow,
-                'operation': 'holding',
-                'partner_id': self.partner_id.id,
-                'notes': "Liquidacion " + str(self.id),
-            }
-            #new_operation_id = self.env['account.check.operation'].create(val)
-            cheque.type = 'third_check'
-            print "asigno third_check"
-            #cheque.operation_ids = [(4, new_operation_id.id, False)]
-            cheque._add_operation('holding', new_payment_id, partner=self.partner_id, date=self.fecha)
-
+            cheque.check_name = str(cheque.check_number) + " " + cheque.firmante_id.name
+            cheque.check_owner_name = cheque.firmante_id.name
+            cheque.check_owner_vat = cheque.firmante_id.cuit
+            #cheque.check_name = str(cheque.check_number) + " " + cheque.check_owner_name
+            cheque.post()
 
 
     def pagar(self, cr, uid, ids, context=None):

@@ -55,20 +55,22 @@
                     </group>
                     <notebook>
                         <page string="Cheques">
-                            <field name="cheque_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')]}">
+                            <field name="cheque_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" context="{'active_model': 'liquidacion', 'fecha': fecha, 'partner_id': partner_id, 'journal_id': journal_id, 'receiptbook_id': receiptbook_id, 'payment_method_id': payment_method_id, 'currency_id': currency_id}">
                                 <tree string="Cheques" editable="bottom" >
-                                    <field name="name" invisible="1"/>
-                                    <field name="owner_name" invisible="1"/>
-                                    <field name="owner_vat" invisible="1"/>
-                                    <field name="journal_id"/>
-                                    <field name="type"/>
-                                    <field name="state"/>
-                                    <field name="number"/>
-                                    <field name="firmante_id"/>
-                                    <field name="bank_id"/>
-                                    <field name="amount" sum="Total"/>
-                                    <field name="issue_date"/>
+                                    <field name="partner_type"/>
+                                    <field name="currency_id"/>
                                     <field name="payment_date"/>
+                                    <field name="payment_type"/>
+                                    <field name="payment_method_id"/>
+                                    <field name="journal_id"/>
+                                    <field name="check_type"/>
+                                    <field name="state"/>
+                                    <field name="check_number"/>
+                                    <field name="firmante_id"/>
+                                    <field name="check_bank_id"/>
+                                    <field name="amount" sum="Total"/>
+                                    <field name="check_issue_date"/>
+                                    <field name="check_payment_date"/>
                                     <field name="fecha_acreditacion"/>
                                     <field name="dias" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
                                     <field name="tasa_fija"/>
