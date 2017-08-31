@@ -24,18 +24,17 @@ class AccountPayment(models.Model):
     _name = 'account.payment'
     _description = 'Opciones extras de cheques para calculo de financiera'
 
-    liquidacion_id = fields.Many2one('liquidacion', 'Liquidacion id')
-    firmante_id = fields.Many2one('firmante', 'Firmante')
-
-    fecha_acreditacion = fields.Date('Acreditacion')
-    dias = fields.Integer(string='Dias', compute='_dias')
-    tasa_fija = fields.Float('% Fija')
-    monto_fijo = fields.Float(string='Gasto', compute='_monto_fijo')
-    tasa_mensual = fields.Float('% Mensual')
-    monto_mensual = fields.Float(string='Interes', compute='_monto_mensual')
-    vat_tax_id = fields.Many2one('account.tax', '% IVA')
-    monto_iva = fields.Float('IVA', compute='_monto_iva')
-    monto_neto = fields.Float(string='Neto', compute='_monto_neto')
+    check_liquidacion_id = fields.Many2one('liquidacion', 'Liquidacion id')
+    check_firmante_id = fields.Many2one('firmante', 'Firmante')
+    check_fecha_acreditacion = fields.Date('Acreditacion')
+    check_dias = fields.Integer(string='Dias', compute='_check_dias')
+    check_tasa_fija = fields.Float('Impuesto al cheque')
+    check_monto_fijo = fields.Float(string='Monto Imp. al cheque', compute='_check_monto_fijo')
+    check_tasa_mensual = fields.Float('Tasa de Interes')
+    check_monto_mensual = fields.Float(string='Monto Interes', compute='_check_monto_mensual')
+    check_vat_tax_id = fields.Many2one('account.tax', 'Tasa de IVA')
+    check_monto_iva = fields.Float('IVA', compute='_check_monto_iva')
+    check_monto_neto = fields.Float(string='Neto', compute='_check_monto_neto')
 
     @api.model
     def default_get(self, fields):
@@ -44,41 +43,58 @@ class AccountPayment(models.Model):
         active_model = context.get('active_model')
         active_ids = context.get('active_ids')
         active_id = context.get('active_id')
-        fecha = context.get('fecha')
-        partner_id = context.get('partner_id')
-        journal_id = context.get('journal_id')
-        receiptbook_id = context.get('receiptbook_id')
-        payment_method_id = context.get('payment_method_id')
-        currency_id = context.get('currency_id')
+        action = context.get('action')
 
+        print "ACTION"
+        print action
         if active_model == 'liquidacion':
-            print "valores"
-            rec.update({
-                'payment_type': 'inbound',
-                'partner_type': 'customer',
-                'partner_id': partner_id,
-                'journal_id': journal_id,
-                'payment_method_id': payment_method_id,
-                'payment_method_code': 'received_third_check',
-                'receiptbook_id': receiptbook_id,
-                'payment_date': fecha,
-                #'communication': 'Liquidacion Nro ' + str(self.id),
-                'currency_id': currency_id,
-                #'commercial_partner_id': cheque.type,
-            })
+            print "LIQUIDACION"
+            fecha = context.get('fecha')
+            partner_id = context.get('partner_id')
+            journal_id = context.get('journal_id')
+            receiptbook_id = context.get('receiptbook_id')
+            currency_id = context.get('currency_id')
+
+            if action == 'cheque_nuevo':
+                print "CHEQUE NUEVO"
+                rec.update({
+                    'payment_type': 'inbound',
+                    'partner_type': 'customer',
+                    'partner_id': partner_id,
+                    'journal_id': journal_id,
+                    'payment_method_id': 5,
+                    'payment_method_code': 'received_third_check',
+                    'check_type': 'third_check',
+                    'receiptbook_id': receiptbook_id,
+                    'payment_date': fecha,
+                    'currency_id': currency_id,
+                })
+            elif action == 'realizar_pago':
+                print "REALIZAR PAGO"
+                print active_id
+                print active_ids
+                liquidacion_id = self.env[active_model].browse(active_id)
+                amount = liquidacion_id.get_neto()
+                fecha = liquidacion_id.fecha
+                rec.update({
+                    'payment_type': 'outbound',
+                    'partner_type': 'customer',
+                    'partner_id': partner_id,
+                    'amount': amount,
+                    'payment_date': fecha,
+                })
         return rec
-
-
+    
     @api.one
-    @api.depends('liquidacion_id.fecha', 'fecha_acreditacion')
-    def _dias(self):
+    @api.depends('check_liquidacion_id.fecha', 'check_fecha_acreditacion')
+    def _check_dias(self):
         fecha_inicial_str = False
         fecha_final_str = False
         _logger.error("_calcular_descuento_dias")
-        if self.liquidacion_id.fecha != False:
-           fecha_inicial_str = str(self.liquidacion_id.fecha)
-        if self.fecha_acreditacion != False:
-           fecha_final_str = str(self.fecha_acreditacion)
+        if self.check_liquidacion_id.fecha != False:
+           fecha_inicial_str = str(self.check_liquidacion_id.fecha)
+        if self.check_fecha_acreditacion != False:
+           fecha_final_str = str(self.check_fecha_acreditacion)
         if fecha_inicial_str != False and fecha_final_str != False:
             formato_fecha = "%Y-%m-%d"
             fecha_inicial = datetime.strptime(fecha_inicial_str, formato_fecha)
@@ -107,122 +123,182 @@ class AccountPayment(models.Model):
                 fecha_inicial = datetime.strptime(fecha_inicial_str, formato_fecha)
                 i = i + 1
             if diferencia.days > 0:
-                self.dias = diferencia.days
+                self.check_dias = diferencia.days
             else:
-                self.dias = 0
+                self.check_dias = 0
             print "DIAS: "
-            print self.dias
+            print self.check_dias
 
 
     @api.one
-    @api.depends('monto_mensual', 'vat_tax_id')
-    def _monto_iva(self):
-        if self.vat_tax_id != None:
-    	   self.monto_iva = self.monto_mensual * (self.vat_tax_id.amount / 100)
+    @api.depends('check_monto_mensual', 'check_vat_tax_id')
+    def _check_monto_iva(self):
+        if self.check_vat_tax_id != None:
+    	   self.check_monto_iva = self.check_monto_mensual * (self.check_vat_tax_id.amount / 100)
 
     @api.one
-    @api.depends('amount', 'tasa_fija')
-    def _monto_fijo(self):
-    	self.monto_fijo = self.amount * (self.tasa_fija / 100)
+    @api.depends('amount', 'check_tasa_fija')
+    def _check_monto_fijo(self):
+    	self.check_monto_fijo = self.amount * (self.check_tasa_fija / 100)
 
     @api.one
-    @api.depends('amount', 'tasa_mensual', 'dias')
-    def _monto_mensual(self):
-    	self.monto_mensual = self.dias * ((self.tasa_mensual / 30) / 100) * self.amount
+    @api.depends('amount', 'check_tasa_mensual', 'check_dias')
+    def _check_monto_mensual(self):
+    	self.check_monto_mensual = self.check_dias * ((self.check_tasa_mensual / 30) / 100) * self.amount
 
     @api.one
-    @api.depends('amount', 'monto_fijo', 'monto_mensual', 'monto_iva')
-    def _monto_neto(self):
-    	self.monto_neto = self.amount - self.monto_fijo - self.monto_mensual - self.monto_iva
-
-    @api.onchange('check_number')
-    def _set_name_number(self):
-        print self.check_owner_name
-        if self.check_owner_name != False:
-            self.check_name = str(self.check_number) + " " + self.check_owner_name
+    @api.depends('amount', 'check_monto_fijo', 'check_monto_mensual', 'check_monto_iva')
+    def _check_monto_neto(self):
+    	self.check_monto_neto = self.amount - self.check_monto_fijo - self.check_monto_mensual - self.check_monto_iva
 
     @api.onchange('check_payment_date')
-    def _fecha_acreditacion(self):
+    def _check_fecha_acreditacion(self):
         print("payment_date change")
-        self.fecha_acreditacion = self.check_payment_date
+        self.check_fecha_acreditacion = self.check_payment_date
+
+#    @api.onchange('journal_id')
+#    def _change_journal(self):
+#        print("journal change en payment")
+#        self.check_fecha_acreditacion = self.check_payment_date
+#        self.payment_method_id = 5
+#        self.payment_method_code = 'received_third_check'
+
 
 class Liquidacion(models.Model):
     _name = 'liquidacion'
+
+    RECEIVED_THIRD_CHECK = 5
 
     id = fields.Integer('Nro Liquidacion')
     fecha = fields.Date('Fecha', required=True, default=lambda *a: time.strftime('%Y-%m-%d'))
     active = fields.Boolean('Activa', default=True)
     partner_id = fields.Many2one('res.partner', 'Cliente', required=True)
-    journal_id = fields.Many2one('account.journal', 'Diario', required=True, domain="[('type', 'in', ('bank', 'cash'))]")
+    journal_id = fields.Many2one('account.journal', 'Diario', domain="[('type', 'in', ('bank', 'cash')), ('inbound_payment_method_ids.id','=', 5)]")
     analytic_id = fields.Many2one('account.analytic.account', 'Cuenta analítica')
     move_id = fields.Many2one('account.move', 'Asiento', readonly=True)
     invoice_id = fields.Many2one('account.invoice', 'Factura', readonly=True)
-    cheque_ids = fields.One2many('account.payment', 'liquidacion_id', 'Cheques', ondelete='cascade')
-    state = fields.Selection([('cotizacion', 'Cotizacion'), ('confirmada', 'Confirmada'), ('pagado', 'Pagado'), ('cancelada', 'Cancelada')], default='cotizacion', string='Status', readonly=True, track_visibility='onchange')
-    receiptbook_id = fields.Many2one('account.payment.receiptbook', "ReceiptBook")
-    payment_method_id = fields.Many2one('account.payment.method', "Payment Method")
-    currency_id = fields.Many2one('res.currency', "Moneda")
+    payment_ids = fields.One2many('account.payment', 'check_liquidacion_id', 'Cheques', ondelete='cascade')
+    state = fields.Selection([('cotizacion', 'Cotizacion'), ('confirmada', 'Confirmada'), ('facturada', 'Facturada'), ('pagada', 'Pagada'), ('cancelada', 'Cancelada')], default='cotizacion', string='Status', readonly=True, track_visibility='onchange')
+    receiptbook_id = fields.Many2one('account.payment.receiptbook', "ReceiptBook", domain="[('partner_type','=', 'customer')]")
+    payment_method_id = fields.Many2one('account.payment.method', "Payment Method", readonly=True)
+    currency_id = fields.Many2one('res.currency', "Moneda", readonly=True)
+
+    @api.model
+    def default_get(self, fields):
+        rec = super(Liquidacion, self).default_get(fields)
+        context = dict(self._context or {})
+        active_model = context.get('active_model')
+        active_ids = context.get('active_ids')
+        active_id = context.get('active_id')
+
+#        if active_model == 'liquidacion':
+        rec.update({
+            'receiptbook_id': 2,
+            'payment_method_id': 5,
+            'currency_id': 20,
+        })
+        return rec
 
     def get_bruto(self):
         bruto = 0
-        for cheque in self.cheque_ids:
-            bruto += cheque.amount
+        for payment in self.payment_ids:
+            bruto += payment.amount
         return bruto
 
     def get_gasto(self):
         gasto = 0
-        for cheque in self.cheque_ids:
-            gasto += cheque.monto_fijo
+        for payment in self.payment_ids:
+            gasto += payment.check_monto_fijo
         return gasto
 
     def get_interes(self):
         interes = 0
-        for cheque in self.cheque_ids:
-            interes += cheque.monto_mensual
+        for payment in self.payment_ids:
+            interes += payment.check_monto_mensual
         return interes
 
     def get_iva(self):
         iva = 0
-        for cheque in self.cheque_ids:
-            iva += cheque.monto_iva
+        for payment in self.payment_ids:
+            iva += payment.check_monto_iva
         return iva
 
     def get_neto(self):
         neto = 0
-        for cheque in self.cheque_ids:
-            neto += cheque.monto_neto
+        for payment in self.payment_ids:
+            neto += payment.check_monto_neto
         return neto
 
     @api.onchange('journal_id')
     def _set_journal_id(self):
-        for cheque in self.cheque_ids:
-            cheque.journal_id = self.journal_id
-            print("cheque Nro %r", cheque.number)
-            print("set journal")
+        print("journal change en liquidacion")
+        for payment in self.payment_ids:
+            payment.journal_id = self.journal_id
+            payment.payment_method_id = 5
+            payment.payment_method_code = 'received_third_check'
     
     @api.one
     def confirmar(self):
         _logger.error("CONFIRMAR2")
         self.state = 'confirmada'
-        self.confirmar_cheques()
+        self.confirmar_payments()
 
         return True
 
-    def confirmar_cheques(self):
-        #._add_operation('holding', payment, partner=payment.partner_id, date=payment.payment_date)
-        #self.partner_id.commercial_partner_id = self.partner_id.id
-        for cheque in self.cheque_ids:
-            cheque.check_name = str(cheque.check_number) + " " + cheque.firmante_id.name
-            cheque.check_owner_name = cheque.firmante_id.name
-            cheque.check_owner_vat = cheque.firmante_id.cuit
-            #cheque.check_name = str(cheque.check_number) + " " + cheque.check_owner_name
-            cheque.post()
+    def confirmar_payments(self):
+        for payment in self.payment_ids:
+            payment.check_name = str(payment.check_number) + " " + payment.check_firmante_id.name
+            payment.check_owner_name = payment.check_firmante_id.name
+            payment.check_owner_vat = payment.check_firmante_id.cuit
+            payment.payment_method_id = 5
+            payment.payment_method_code = 'received_third_check'
+            payment.check_type = 'third_check'
+            payment.post()
 
 
     def pagar(self, cr, uid, ids, context=None):
         self.write(cr, uid, ids, {'state':'cotizacion'}, context=None)
         return True
 
-    def editar(self, cr, uid, ids, context=None):
-        self.write(cr, uid, ids, {'state':'cotizacion'}, context=None)
+    @api.one
+    def facturar(self):
+        print "Facturar ***********************************"
+        account_invoice_obj = self.env['account.invoice']
+        # Create invoice line
+        ail = {
+            'name': "Interes por servicios financieros",
+            'quantity':1,
+            'price_unit': self.get_interes(),
+            'vat_tax_id': 11,
+            'account_id': self.journal_id.profit_account_id.id,
+        }
+
+        # Create invoice line
+        ail2 = {
+            'name': "Impuesto a los debitos y creditos bancarios por cuenta del cliente.",
+            'quantity':1,
+            'price_unit': self.get_gasto(),
+            'vat_tax_id': 1,
+            'account_id': self.journal_id.profit_account_id.id,
+        }
+        print "Creamos la factura 1"
+        account_invoice_customer0 = {
+            'account_id':self.partner_id.property_account_receivable_id.id,
+            'partner_id':self.partner_id.id,
+            'journal_id':11,
+            'currency_id':self.currency_id.id,
+            'company_id': 1,
+            'date':self.fecha,
+            'invoice_line_ids':[(0, 0, ail), (0, 0, ail2)],
+        }
+        print "Creamos la factura 2"
+        new_invoice_id = self.env['account.invoice'].create(account_invoice_customer0)
+        #account_invoice_customer0.signal_workflow('invoice_open')
+        print "Creamos la factura 3"
+        #account_invoice_customer0.reconciled = True
+        #account_invoice_customer0.state = 'paid'
+        self.invoice_id = new_invoice_id.id
+
+        self.state = 'facturada'
+        #self.write(cr, uid, ids, {'state':'cotizacion'}, context=None)
         return True
