@@ -16,6 +16,20 @@
         </field>
     </record>
 
+
+    <act_window
+    id="new_payment_action"
+    name="Realizar Pago"
+    res_model="account.payment"
+    src_model="liquidacion"
+    view_mode="form"
+    multi="False"
+    target="new"
+    key2="client_action_multi"
+    context="{'action': 'realizar_pago', 'partner_id': partner_id, 'payment_type': 'outbound', 'partner_type': 'customer', 'payment_date': fecha}"
+     />
+
+
     <record id="view_form_liquidacion" model="ir.ui.view">
         <field name="name">Liquidacion Form</field>
         <field name="model">liquidacion</field>
@@ -27,31 +41,7 @@
                     <!--<button name="%(new_payment_action)d" class="oe_highlight"  string="Pagar" states="confirmada" type="object" />-->
                     <field name="state" widget="statusbar"/>
                 </header>
-                <sheet class="oe_form_sheet_full_screen">
-                  <xpath expr="." position="inside">
-                    <link rel="stylesheet" href="/librasoft-financiera-cheques/static/src/css/liquidacion.css"/>
-                  </xpath>
-                    <!--<div class="levis">
-                      <xpath expr="." position="inside">
-                          <link rel="stylesheet" href="/librasoft-financiera-cheques/static/src/css/liquidacion.css"/>
-                      </xpath>
-                      <b>HOLA - ACA ESTAMOS</b>
-                    </div>-->
-<!--                    <div class="oe_button_box" name="button_box">
-                      <button type="action" class="oe_stat_button" id="invoice_button" icon="fa-pencil-square-o" name="192" attrs="{'invisible': [('customer', '=', False)]}" context="{'search_default_partner_id': active_id,'default_partner_id': active_id}" modifiers="{'invisible': [['customer', '=', false]]}">
-                        <div class="o_form_field o_stat_info">
-                          <span class="o_stat_value">
-                            <field name="total_invoiced" widget="monetary" options="{'currency_field': 'currency_id'}" modifiers="{'readonly': true}"/>
-                          </span>
-                          <span class="o_stat_text">
-                            Facturado
-                          </span>
-                        </div>
-                      </button>
-                      <button class="oe_stat_button" type="action" name="197" icon="fa-book">
-                        <field string="Cuentas analíticas" name="contracts_count" widget="statinfo" modifiers="{'readonly': true}"/>
-                      </button>
-                    </div>-->
+                <header>
                     <group>
                       <group>
                         <field name="id"/>
@@ -68,39 +58,36 @@
                         <field name="invoice_id"/>
                       </group>
                     </group>
-                    <notebook>
-                        <page string="Cheques">
-                            <field name="payment_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" context="{'active_model': 'liquidacion', 'action': 'cheque_nuevo', 'fecha': fecha, 'partner_id': partner_id, 'journal_id': journal_id, 'receiptbook_id': receiptbook_id, 'payment_method_id': payment_method_id, 'currency_id': currency_id}">
-                                <tree string="Cheques" editable="bottom" >
-                                    <field name="partner_type" invisible="1"/>
-                                    <field name="currency_id" invisible="1"/>
-                                    <field name="payment_date" invisible="1"/>
-                                    <field name="payment_type" invisible="1"/>
-                                    <field name="payment_method_id" invisible="1"/>
-                                    <field name="payment_method_code" invisible="1"/>
-                                    <field name="journal_id" invisible="1"/>
-                                    <field name="check_type" invisible="1"/>
-                                    <field name="state" invisible="1"/>
-                                    <field name="check_firmante_id" required="1"/>
-                                    <field name="check_number" required="1"/>
-                                    <field name="check_bank_id" required="1"/>
-                                    <field name="amount" sum="Total"/>
-                                    <field name="check_issue_date" required="1"/>
-                                    <field name="check_payment_date" required="1"/>
-                                    <field name="check_fecha_acreditacion" required="1"/>
-                                    <field name="check_dias" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
-                                    <field name="check_tasa_fija"/>
-                                    <field name="check_monto_fijo" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
-                                    <field name="check_tasa_mensual"/>
-                                    <field name="check_monto_mensual" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
-                                    <field name="check_vat_tax_id"/>
-                                    <field name="check_monto_iva" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
-                                    <field name="check_monto_neto" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
-                                </tree>
-                            </field>
-                        </page>
-                    </notebook>
-                </sheet>
+                    
+                    <field name="payment_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" context="{'active_model': 'liquidacion', 'action': 'cheque_nuevo', 'fecha': fecha, 'partner_id': partner_id, 'journal_id': journal_id, 'receiptbook_id': receiptbook_id, 'payment_method_id': payment_method_id, 'currency_id': currency_id}">
+                        <tree string="Cheques" editable="bottom" >
+                            <field name="partner_type" invisible="1"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="payment_date" invisible="1"/>
+                            <field name="payment_type" invisible="1"/>
+                            <field name="payment_method_id" invisible="1"/>
+                            <field name="payment_method_code" invisible="1"/>
+                            <field name="journal_id" invisible="1"/>
+                            <field name="check_type" invisible="1"/>
+                            <field name="state" invisible="1"/>
+                            <field name="check_firmante_id" required="1"/>
+                            <field name="check_number" required="1"/>
+                            <field name="check_bank_id" required="1"/>
+                            <field name="amount" sum="Total"/>
+                            <field name="check_issue_date" required="1"/>
+                            <field name="check_payment_date" required="1"/>
+                            <field name="check_fecha_acreditacion" required="1"/>
+                            <field name="check_dias" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
+                            <field name="check_tasa_fija"/>
+                            <field name="check_monto_fijo" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
+                            <field name="check_tasa_mensual"/>
+                            <field name="check_monto_mensual" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
+                            <field name="check_vat_tax_id"/>
+                            <field name="check_monto_iva" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
+                            <field name="check_monto_neto" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
+                        </tree>
+                    </field>
+                </header>
             </form>
         </field>
     </record>
@@ -121,18 +108,6 @@
     view_id="account.view_account_payment_tree"
     id="payment_action"
     />
-
-    <act_window
-    id="new_payment_action"
-    name="Realizar Pago"
-    res_model="account.payment"
-    src_model="liquidacion"
-    view_mode="form"
-    multi="False"
-    target="new"
-    key2="client_action_multi"
-    context="{'action': 'realizar_pago', 'partner_id': partner_id, 'payment_type': 'outbound', 'partner_type': 'customer', 'payment_date': fecha}"
-     />
 
 
     <!-- Menu Principal del modulo (barra superior) - Financiera -->

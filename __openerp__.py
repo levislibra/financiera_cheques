@@ -34,6 +34,7 @@
     ],
 
     'css': [
-        'static/src/css/liquidacion2.css'
+        'static/src/css/liquidacion.css'
     ],
+    'application': True,
 }
