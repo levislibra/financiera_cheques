@@ -38,6 +38,7 @@
                 <header>
                     <button name="confirmar" class="oe_highlight" string="Confirmar" states="cotizacion" type="object" />
                     <button name="facturar" class="oe_highlight" string="Facturar" states="confirmada" type="object" />
+                    <button name="print_datos" class="oe_highlight" string="Print" type="object" />
                     <!--<button name="%(new_payment_action)d" class="oe_highlight"  string="Pagar" states="confirmada" type="object" />-->
                     <field name="state" widget="statusbar"/>
                 </header>
@@ -51,8 +52,10 @@
                         <field name="id"/>
                         <field name="fecha" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" context="{'fecha': fecha}"/>
                         <field name="partner_id" attrs="{'readonly': [('state', '!=', 'cotizacion')]}"/>
-                        <field name="analytic_id" attrs="{'readonly': [('state', '!=', 'cotizacion')]}"/>
+                        <field name="analytic_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': True}"/>
                         <field name="journal_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
+                        <field name="factura_electronica" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])], 'required': True}"/>
+                        <field name="vat_tax_id" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])], 'invisible': [('factura_electronica', '=', False)], 'required': [('factura_electronica', '=', True)]}"/>
                       </group>
                       <group>
                         <field name="receiptbook_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
@@ -64,7 +67,7 @@
                     </group>
                     <notebook>
                         <page string="Cheques">
-                            <field name="payment_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" context="{'active_model': 'liquidacion', 'action': 'cheque_nuevo', 'fecha': fecha, 'partner_id': partner_id, 'journal_id': journal_id, 'receiptbook_id': receiptbook_id, 'payment_method_id': payment_method_id, 'currency_id': currency_id}">
+                            <field name="payment_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" context="{'active_model': 'liquidacion', 'action': 'cheque_nuevo', 'fecha': fecha, 'partner_id': partner_id, 'journal_id': journal_id, 'receiptbook_id': receiptbook_id, 'payment_method_id': payment_method_id, 'currency_id': currency_id, 'vat_tax_id': vat_tax_id}">
                                 <tree string="Cheques" editable="bottom" >
                                     <field name="partner_type" invisible="1"/>
                                     <field name="currency_id" invisible="1"/>
