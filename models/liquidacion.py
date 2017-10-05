@@ -4,6 +4,7 @@ from openerp import models, fields, api
 import time
 from datetime import datetime, timedelta
 from openerp.exceptions import UserError
+from openerp.exceptions import ValidationError
 from openerp.tools.translate import _
 
 from pprint import pprint
@@ -38,6 +39,12 @@ class AccountPayment(models.Model):
 
     @api.model
     def default_get(self, fields):
+        res = super(hr_attendance, self).default_get(fields)
+        res['animal'] = 'dog'
+        return res
+
+    @api.model
+    def default_get(self, fields):
         rec = super(AccountPayment, self).default_get(fields)
         context = dict(self._context or {})
         active_model = context.get('active_model')
@@ -45,10 +52,7 @@ class AccountPayment(models.Model):
         active_id = context.get('active_id')
         action = context.get('action')
 
-        print "ACTION"
-        print action
         if active_model == 'liquidacion':
-            print "LIQUIDACION"
             fecha = context.get('fecha')
             partner_id = context.get('partner_id')
             journal_id = context.get('journal_id')
@@ -56,18 +60,13 @@ class AccountPayment(models.Model):
             payment_method_id = context.get('payment_method_id')
             currency_id = context.get('currency_id')
             vat_tax_id = context.get('vat_tax_id')
-            print "get context"
-            print payment_method_id
-            print "================"
 
             cr = self.env.cr
             uid = self.env.uid
             payment_method_obj = self.pool.get('account.payment.method')
             payment_method_id = payment_method_obj.search(cr, uid, [('code', '=', 'received_third_check')])[0]
 
-
             if action == 'cheque_nuevo':
-                print "CHEQUE NUEVO"
                 rec.update({
                     'payment_type': 'inbound',
                     'partner_type': 'customer',
@@ -82,21 +81,26 @@ class AccountPayment(models.Model):
                     'check_vat_tax_id': vat_tax_id,
                 })
             elif action == 'realizar_pago':
-                print "REALIZAR PAGO"
-                print active_id
-                print active_ids
                 liquidacion_id = self.env[active_model].browse(active_id)
                 amount = liquidacion_id.get_neto()
                 fecha = liquidacion_id.fecha
-                rec.update({
-                    'payment_type': 'outbound',
-                    'partner_type': 'customer',
-                    'partner_id': partner_id,
-                    'amount': amount,
-                    'payment_date': fecha,
-                })
+                rec['payment_type'] = 'outbound'
+                rec['partner_type'] = 'customer'
+                rec['partner_id'] = partner_id
+                rec['amount'] = amount
+                rec['payment_date'] = fecha
         return rec
     
+    @api.onchange('payment_type')
+    def payment_change(self):
+        context = dict(self._context or {})
+        active_model = context.get('active_model')
+        if self.payment_type == 'outbound':
+            self.partner_type = 'customer'
+        else:
+            self.partner_type = 'supplier'
+
+
     @api.one
     @api.depends('check_liquidacion_id.fecha', 'check_fecha_acreditacion')
     def _check_dias(self):
@@ -180,7 +184,7 @@ class Liquidacion(models.Model):
     move_id = fields.Many2one('account.move', 'Asiento', readonly=True)
     invoice_id = fields.Many2one('account.invoice', 'Factura', readonly=True)
     payment_ids = fields.One2many('account.payment', 'check_liquidacion_id', 'Cheques', ondelete='cascade')
-    state = fields.Selection([('cotizacion', 'Cotizacion'), ('confirmada', 'Confirmada'), ('facturada', 'Facturada'), ('pagada', 'Pagada'), ('cancelada', 'Cancelada')], default='cotizacion', string='Status', readonly=True, track_visibility='onchange')
+    state = fields.Selection([('cotizacion', 'Cotizacion'), ('confirmada', 'Confirmada'), ('facturada', 'Facturada'), ('cancelada', 'Cancelada')], default='cotizacion', string='Estado', readonly=True, track_visibility='onchange')
     receiptbook_id = fields.Many2one('account.payment.receiptbook', "ReceiptBook", domain="[('partner_type','=', 'customer')]")
     payment_method_id = fields.Many2one('account.payment.method', "Payment Method", readonly=True)
     currency_id = fields.Many2one('res.currency', "Moneda", readonly=True)
@@ -267,8 +271,20 @@ class Liquidacion(models.Model):
         _logger.error("CONFIRMAR2")
         self.state = 'confirmada'
         self.confirmar_payments()
-
         return True
+
+    @api.multi
+    def ver_factura(self):
+        self.ensure_one()
+        print "var_factura"
+        action = self.env.ref('account.action_invoice_tree1')
+        print action
+        result = action.read()[0]
+        print result
+        form_view = self.env.ref('account.invoice_form')
+        result['views'] = [(form_view.id, 'form')]
+        result['res_id'] = self.invoice_id.id
+        return result
 
     def confirmar_payments(self):
         for payment in self.payment_ids:
@@ -287,20 +303,13 @@ class Liquidacion(models.Model):
 
     @api.one
     def facturar(self):
-        print "Facturar ***********************************"
         account_invoice_obj = self.env['account.invoice']
         cr = self.env.cr
         uid = self.env.uid
         journal_obj = self.pool.get('account.journal')
         journal_ids = journal_obj.search(cr, uid, [('type', '=', 'sale'), ('use_documents', '=', self.factura_electronica)])
         if len(journal_ids) > 0:
-            print "journal 1"
-            print journal_ids
-            print journal_ids[0]
             journal_id = journal_obj.browse(cr, uid, journal_ids[0], context=None)
-            print "len > 0"
-            print journal_id
-            print journal_id.id
             vat_tax_id = None
             if self.factura_electronica:
                 vat_tax_id = self.vat_tax_id.id
@@ -323,7 +332,6 @@ class Liquidacion(models.Model):
                 'invoice_line_tax_ids': [vat_tax_id],
                 'account_id': journal_id.default_credit_account_id.id,
             }
-            print "Creamos la factura 1"
             account_invoice_customer0 = {
                 'account_id': self.partner_id.property_account_receivable_id.id,
                 'partner_id': self.partner_id.id,
@@ -333,16 +341,13 @@ class Liquidacion(models.Model):
                 'date': self.fecha,
                 'invoice_line_ids': [(0, 0, ail), (0, 0, ail2)],
             }
-            print "Creamos la factura 2"
             new_invoice_id = self.env['account.invoice'].create(account_invoice_customer0)
             #account_invoice_customer0.signal_workflow('invoice_open')
-            print "Creamos la factura 3"
             #account_invoice_customer0.reconciled = True
             #account_invoice_customer0.state = 'paid'
             self.invoice_id = new_invoice_id.id
 
-            #self.state = 'facturada'
-            #self.write(cr, uid, ids, {'state':'cotizacion'}, context=None)
+            self.state = 'facturada'
         else:
             raise ValidationError("Falta Diario de ventas.")
         return True
