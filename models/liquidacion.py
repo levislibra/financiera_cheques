@@ -202,7 +202,9 @@ class Liquidacion(models.Model):
     fecha = fields.Date('Fecha', required=True, default=lambda *a: time.strftime('%Y-%m-%d'))
     active = fields.Boolean('Activa', default=True)
     partner_id = fields.Many2one('res.partner', 'Cliente', required=True)
-    journal_id = fields.Many2one('account.journal', 'Diario', domain="[('type', 'in', ('bank', 'cash')), ('inbound_payment_method_ids.code', 'in', ['received_third_check'])]")
+    journal_id = fields.Many2one('account.journal', 'Diario de cheques', domain="[('type', 'in', ('bank', 'cash')), ('inbound_payment_method_ids.code', 'in', ['received_third_check'])]")
+    journal_invoice_id = fields.Many2one('account.journal', 'Diario de factura', domain="[('use_documents', '=', False), ('type', '=', 'sale')]")
+    journal_invoice_use_doc_id = fields.Many2one('account.journal', 'Diario de factura', domain="[('use_documents', '=', True), ('type', '=', 'sale')]")
     analytic_id = fields.Many2one('account.analytic.account', 'Cuenta analítica')
     move_id = fields.Many2one('account.move', 'Asiento', readonly=True)
     invoice_id = fields.Many2one('account.invoice', 'Factura', readonly=True)
@@ -341,7 +343,7 @@ class Liquidacion(models.Model):
                 'quantity':1,
                 'price_unit': self.get_interes(),
                 #'vat_tax_id': vat_tax_id,
-                'invoice_line_tax_ids':  [vat_tax_id],
+                #'invoice_line_tax_ids':  [vat_tax_id],
                 'account_id': journal_id.default_debit_account_id.id,
             }
 
@@ -351,7 +353,7 @@ class Liquidacion(models.Model):
                 'quantity':1,
                 'price_unit': self.get_gasto(),
                 #'vat_tax_id': vat_tax_id,
-                'invoice_line_tax_ids': [vat_tax_id],
+                #'invoice_line_tax_ids': [vat_tax_id],
                 'account_id': journal_id.default_credit_account_id.id,
             }
             account_invoice_customer0 = {

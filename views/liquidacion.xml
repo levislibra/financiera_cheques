@@ -24,8 +24,6 @@
         </field>
     </record>
 
-
-
     <!-- Liquidacions - Formularios de creacion  -->
 
     <record id="view_tree_liquidacion" model="ir.ui.view">
@@ -80,7 +78,9 @@
                         <field name="analytic_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': True}"/>
                         <field name="journal_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
                         <field name="factura_electronica" attrs="{'readonly': [('state', 'not in', ['cotizacion'])]}"/>
-                        <field name="vat_tax_id" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])], 'invisible': [('factura_electronica', '=', False)], 'required': [('factura_electronica', '=', True)]}"/>
+                        <field name="vat_tax_id" attrs="{'readonly': [('state', 'not in', ['cotizacion'])], 'invisible': [('factura_electronica', '=', False)], 'required': [('factura_electronica', '=', True)]}"/>
+                        <field name="journal_invoice_id" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])],'required': [('factura_electronica', '=', False)], 'invisible': [('factura_electronica', '!=', False)]}" />
+                        <field name="journal_invoice_use_doc_id" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])],'required': [('factura_electronica', '=', True)], 'invisible': [('factura_electronica', '=', False)]}" />
                       </group>
                       <group>
                         <field name="receiptbook_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
@@ -135,63 +135,11 @@
         <field name="view_id" ref="view_tree_liquidacion"/>
     </record>
 
-
-<!--    <act_window name="Pagos"
-    res_model="account.payment"
-    src_model="liquidacion"
-    key2="client_action_multi"
-    view_mode="tree,form" target="current"
-    view_id="account.view_account_payment_tree"
-    id="payment_action"
--->    />
-
-
     <!-- Menu Principal del modulo (barra superior) - Financiera -->
     <menuitem id="menu_financiera" name="Financiera - Cheques" />
     
     <!-- SubMenu 1 - Liquidaciones -->
     <menuitem id="smenu_liquidaciones" name="Liquidaciones" parent="menu_financiera"  sequence="0" />
     <menuitem id="smenu_liquidaciones_action" name="Liquidaciones" parent="smenu_liquidaciones" action="liquidacion_action"  sequence="0" />
-
-    <!-- actions opening views on models -->
-    <!--
-    <record model="ir.actions.act_window" id="librasoft-financiera-cheques.action_window">
-      <field name="name">librasoft-financiera-cheques window</field>
-      <field name="res_model">librasoft-financiera-cheques.librasoft-financiera-cheques</field>
-      <field name="view_mode">tree,form</field>
-    </record>
-    -->
-
-    <!-- server action to the one above -->
-    <!--
-    <record model="ir.actions.server" id="librasoft-financiera-cheques.action_server">
-      <field name="name">librasoft-financiera-cheques server</field>
-      <field name="model_id" ref="model_librasoft-financiera-cheques_librasoft-financiera-cheques"/>
-      <field name="code">
-        action = {
-          "type": "ir.actions.act_window",
-          "view_mode": "tree,form",
-          "res_model": self._name,
-        }
-      </field>
-    </record>
-    -->
-
-    <!-- Top menu item -->
-    <!--
-    <menuitem name="librasoft-financiera-cheques" id="librasoft-financiera-cheques.menu_root"/>
-    -->
-    <!-- menu categories -->
-    <!--
-    <menuitem name="Menu 1" id="librasoft-financiera-cheques.menu_1" parent="librasoft-financiera-cheques.menu_root"/>
-    <menuitem name="Menu 2" id="librasoft-financiera-cheques.menu_2" parent="librasoft-financiera-cheques.menu_root"/>
-    -->
-    <!-- actions -->
-    <!--
-    <menuitem name="List" id="librasoft-financiera-cheques.menu_1_list" parent="librasoft-financiera-cheques.menu_1"
-              action="librasoft-financiera-cheques.action_window"/>
-    <menuitem name="Server to list" id="librasoft-financiera-cheques" parent="librasoft-financiera-cheques.menu_2"
-              action="librasoft-financiera-cheques.action_server"/>
-    -->
   </data>
 </openerp>
