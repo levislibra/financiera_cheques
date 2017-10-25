@@ -18,6 +18,30 @@ class firmante(models.Model):
 	name = fields.Char("Nombre", size=30, required=True)
 	cuit = fields.Char("Cuit", size=20, required=True)
 
+class check_scanner(models.Model):
+    _name = 'check.scanner'
+    _description = 'Escaner del numero de 29 digitos y su procesamiento'
+
+    name = fields.Char('Numero')
+    bank_codigo = fields.Char('ID Banco')
+    bank_suc = fields.Char('Nro de sucursal')
+    bank_cp = fields.Char('Codigo postal')
+    bank_nro = fields.Char('Nro de cheque')
+    bank_cuenta_corriente = fields.Char('Cuenta Corriente')
+    bank_imagen_frente = fields.Binary('Imagen frontal')
+    bank_imagen_posterior = fields.Binary('Imagen posterior')
+
+    @api.onchange('name')
+    def set_values(self):
+        if self.name != None and len(self.name) == 29:
+            self.bank_codigo = self.name[0:3]
+            self.bank_suc = self.name[3:6]
+            self.bank_cp = self.name[6:10]
+            self.bank_nro = self.name[10:18]
+            self.bank_cuenta_corriente = self.name[18:29]
+        else:
+            raise ValidationError("El escaner no tiene 29 caracteres.")
+
 class AccountPayment(models.Model):
     # This OpenERP object inherits from cheques.de.terceros
     # to add a new float field
@@ -36,12 +60,7 @@ class AccountPayment(models.Model):
     check_vat_tax_id = fields.Many2one('account.tax', 'Tasa de IVA', readonly=True)
     check_monto_iva = fields.Float('IVA', compute='_check_monto_iva')
     check_monto_neto = fields.Float(string='Neto', compute='_check_monto_neto')
-
-    @api.model
-    def default_get(self, fields):
-        res = super(hr_attendance, self).default_get(fields)
-        res['animal'] = 'dog'
-        return res
+    check_scanner_id = fields.Many2one('check.scanner', 'Escaner')
 
     @api.model
     def default_get(self, fields):
@@ -91,6 +110,10 @@ class AccountPayment(models.Model):
                 rec['payment_date'] = fecha
         return rec
     
+    @api.onchange('check_scanner_id')
+    def set_scanner(self):
+        self.check_number = int(self.check_scanner_id.bank_nro)
+
     @api.onchange('payment_type')
     def payment_change(self):
         context = dict(self._context or {})
@@ -190,7 +213,6 @@ class Liquidacion(models.Model):
     currency_id = fields.Many2one('res.currency', "Moneda", readonly=True)
     factura_electronica = fields.Boolean('¿Factura electronica?', default=False)
     vat_tax_id = fields.Many2one('account.tax', 'Tasa de IVA', domain="[('type_tax_use', '=', 'sale')]", readonly=True)
-
 
     @api.model
     def default_get(self, fields):

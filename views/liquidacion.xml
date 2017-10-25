@@ -1,5 +1,31 @@
 <openerp>
   <data>
+
+    <!-- check_scanner - Formularios de creacion  -->
+
+    <record id="view_form_check_scanner" model="ir.ui.view">
+        <field name="name">Check Scanner Form</field>
+        <field name="model">check.scanner</field>
+        <field name="arch" type="xml">
+            <form string="Escanear">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="bank_codigo"/>
+                        <field name="bank_suc"/>
+                        <field name="bank_cp"/>
+                        <field name="bank_nro"/>
+                        <field name="bank_cuenta_corriente"/>
+                        <field name="bank_imagen_frente"/>
+                        <field name="bank_imagen_posterior"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+
+
     <!-- Liquidacions - Formularios de creacion  -->
 
     <record id="view_tree_liquidacion" model="ir.ui.view">
@@ -53,7 +79,7 @@
                         <field name="partner_id" attrs="{'readonly': [('state', '!=', 'cotizacion')]}"/>
                         <field name="analytic_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': True}"/>
                         <field name="journal_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
-                        <field name="factura_electronica" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])]}"/>
+                        <field name="factura_electronica" attrs="{'readonly': [('state', 'not in', ['cotizacion'])]}"/>
                         <field name="vat_tax_id" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])], 'invisible': [('factura_electronica', '=', False)], 'required': [('factura_electronica', '=', True)]}"/>
                       </group>
                       <group>
@@ -77,6 +103,7 @@
                                     <field name="journal_id" invisible="1"/>
                                     <field name="check_type" invisible="1"/>
                                     <field name="state" invisible="1"/>
+                                    <!--<field name="check_scanner_id"/>-->
                                     <field name="check_firmante_id" required="1"/>
                                     <field name="check_number" required="1"/>
                                     <field name="check_bank_id" required="1"/>
