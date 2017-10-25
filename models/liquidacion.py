@@ -327,16 +327,14 @@ class Liquidacion(models.Model):
 
     @api.one
     def facturar(self):
-        account_invoice_obj = self.env['account.invoice']
-        cr = self.env.cr
-        uid = self.env.uid
-        journal_obj = self.pool.get('account.journal')
-        journal_ids = journal_obj.search(cr, uid, [('type', '=', 'sale'), ('use_documents', '=', self.factura_electronica)])
-        if len(journal_ids) > 0:
-            journal_id = journal_obj.browse(cr, uid, journal_ids[0], context=None)
-            vat_tax_id = None
-            if self.factura_electronica:
-                vat_tax_id = self.vat_tax_id.id
+        journal_id = None
+        vat_tax_id = None
+        if self.factura_electronica:
+            journal_id = self.journal_invoice_use_doc_id
+            vat_tax_id = self.vat_tax_id.id
+        else:
+            journal_id = self.journal_invoice_id
+        if journal_id != False and journal_id != None:
             # Create invoice line
             ail = {
                 'name': "Interes por servicios financieros",
@@ -354,7 +352,7 @@ class Liquidacion(models.Model):
                 'price_unit': self.get_gasto(),
                 #'vat_tax_id': vat_tax_id,
                 #'invoice_line_tax_ids': [vat_tax_id],
-                'account_id': journal_id.default_credit_account_id.id,
+                'account_id': journal_id.default_debit_account_id.id,
             }
             account_invoice_customer0 = {
                 'account_id': self.partner_id.property_account_receivable_id.id,
