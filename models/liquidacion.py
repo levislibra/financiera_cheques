@@ -229,10 +229,13 @@ class Liquidacion(models.Model):
         payment_method_obj = self.pool.get('account.payment.method')
         payment_method_id = payment_method_obj.search(cr, uid, [('code', '=', 'received_third_check')])[0]
 
+        payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
+        payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'customer')])[0]
+        currency_id = self.env.user.company_id.currency_id.id
         rec.update({
-            'receiptbook_id': 2,
+            'receiptbook_id': payment_group_receiptbook_id,
             'payment_method_id': payment_method_id,
-            'currency_id': 20,
+            'currency_id': currency_id,
         })
         return rec
 
