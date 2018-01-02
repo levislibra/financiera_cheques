@@ -88,6 +88,7 @@
                         <field name="currency_id" attrs="{'required': True}"/>
                         <field name="move_id"/>
                         <field name="invoice_id"/>
+                        <field name="payment_group_id"/>
                       </group>
                     </group>
                     <notebook>

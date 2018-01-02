@@ -62,6 +62,19 @@ class AccountPayment(models.Model):
     check_monto_neto = fields.Float(string='Neto', compute='_check_monto_neto')
     check_scanner_id = fields.Many2one('check.scanner', 'Escaner')
 
+
+    @api.model
+    def create(self, values):
+        print "***********////////////-------------------/////////**********************"
+        print values
+        print values.has_key('check_liquidacion_id')
+        if values.has_key('check_liquidacion_id') and values['check_liquidacion_id'] != False:
+            liquidacion_id = self.env['liquidacion'].browse(values['check_liquidacion_id'])
+            values['payment_group_id'] = liquidacion_id.payment_group_id.id
+
+        rec = super(AccountPayment, self).create(values)
+        return rec
+
     @api.model
     def default_get(self, fields):
         rec = super(AccountPayment, self).default_get(fields)
@@ -215,6 +228,37 @@ class Liquidacion(models.Model):
     currency_id = fields.Many2one('res.currency', "Moneda", readonly=True)
     factura_electronica = fields.Boolean('¿Factura electronica?', default=False)
     vat_tax_id = fields.Many2one('account.tax', 'Tasa de IVA', domain="[('type_tax_use', '=', 'sale')]", readonly=True)
+    payment_group_id = fields.Many2one('account.payment.group', 'Grupo de pago', readonly=True)
+
+
+    @api.model
+    def create(self, values):
+        print "***********////////////-Crear Liquidaicon------/////////**********************"
+        print values
+        print values.has_key('fecha')
+        print values.has_key('partner_id')
+        cr = self.env.cr
+        uid = self.env.uid
+        payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
+        payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'customer')])[0]
+        currency_id = self.env.user.company_id.currency_id.id
+
+        apg_values = {
+            'payment_date': values['fecha'],
+            'company_id': 1,
+            'partner_id': values['partner_id'],
+            'currency_id': currency_id,
+            #'payment_ids': [(0,0,ap_values)],
+            'receiptbook_id': payment_group_receiptbook_id,
+            'partner_type': 'customer',
+            'account_internal_type': 'receivable', #or payable
+            #'debt_move_line_ids': self._debt_not_reconcilie()[0],
+        }
+        new_payment_group_id = self.env['account.payment.group'].create(apg_values)
+        values['payment_group_id'] = new_payment_group_id.id
+
+        rec = super(Liquidacion, self).create(values)
+        return rec
 
     @api.model
     def default_get(self, fields):
@@ -232,6 +276,10 @@ class Liquidacion(models.Model):
         payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
         payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'customer')])[0]
         currency_id = self.env.user.company_id.currency_id.id
+
+        payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
+        payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'customer')])[0]
+        
         rec.update({
             'receiptbook_id': payment_group_receiptbook_id,
             'payment_method_id': payment_method_id,
@@ -321,8 +369,8 @@ class Liquidacion(models.Model):
             payment.payment_method_id = self.payment_method_id.id
             payment.payment_method_code = 'received_third_check'
             payment.check_type = 'third_check'
-            payment.post()
-
+            #payment.post()
+        self.payment_group_id.post()
 
     def pagar(self, cr, uid, ids, context=None):
         self.write(cr, uid, ids, {'state':'cotizacion'}, context=None)
@@ -376,3 +424,4 @@ class Liquidacion(models.Model):
         else:
             raise ValidationError("Falta Diario de ventas.")
         return True
+
