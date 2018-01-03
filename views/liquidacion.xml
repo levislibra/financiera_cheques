@@ -30,11 +30,11 @@
         <field name="name">Liquidacion Tree</field>
         <field name="model">liquidacion</field>
         <field name="arch" type="xml">
-            <tree string="Liquidaciones">
+            <tree decoration-info="state == 'cotizacion'" decoration-muted="state == 'facturada'" string="Liquidaciones">
                 <field name="id"/>
                 <field name="fecha"/>
                 <field name="partner_id"/>
-                <field name="active"/>
+                <!--<field name="saldo"/>-->
                 <field name="state"/>
             </tree>
         </field>
@@ -82,18 +82,16 @@
                         <field name="journal_invoice_use_doc_id" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])],'required': [('factura_electronica', '=', True)], 'invisible': [('factura_electronica', '=', False)]}" />
                         <field name="saldo" widget="monetary"/>
                       </group>
-                      <group>
-                        <field name="receiptbook_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
-                        <field name="payment_method_id" attrs="{'required': True}"/>
-                        <field name="currency_id" attrs="{'required': True}"/>
-                        <field name="move_id"/>
-                        <field name="invoice_id"/>
-                        <field name="payment_group_id"/>
+                      <group string="Informacion del cliente">
+                        <field name="tasa_fija"/>
+                        <field name="tasa_mensual"/>
+                        <field name="saldo_cta_cte" widget="monetary"/>
+                        <field name="cheques_en_cartera" widget="monetary"/>
                       </group>
                     </group>
                     <notebook>
                         <page string="Cheques">
-                            <field name="payment_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" context="{'active_model': 'liquidacion', 'action': 'cheque_nuevo', 'fecha': fecha, 'partner_id': partner_id, 'journal_id': journal_id, 'receiptbook_id': receiptbook_id, 'payment_method_id': payment_method_id, 'currency_id': currency_id, 'vat_tax_id': vat_tax_id}">
+                            <field name="payment_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" context="{'active_model': 'liquidacion', 'action': 'cheque_nuevo', 'fecha': fecha, 'partner_id': partner_id, 'journal_id': journal_id, 'receiptbook_id': receiptbook_id, 'payment_method_id': payment_method_id, 'currency_id': currency_id, 'vat_tax_id': vat_tax_id, 'active_id': id}">
                                 <tree string="Cheques" editable="bottom" >
                                     <field name="partner_type" invisible="1"/>
                                     <field name="currency_id" invisible="1"/>
@@ -107,8 +105,8 @@
                                     <!--<field name="check_scanner_id"/>-->
                                     <field name="check_firmante_id" required="1"/>
                                     <field name="check_number" required="1"/>
-                                    <field name="check_bank_id" required="1"/>
-                                    <field name="amount" sum="Total"/>
+                                    <field name="check_bank_id" options="{'no_quick_create':True,'no_create_edit':True}" required="1"/>
+                                    <field name="amount"  widget="monetary" sum="Total"/>
                                     <field name="check_issue_date" required="1"/>
                                     <field name="check_payment_date" required="1"/>
                                     <field name="check_fecha_acreditacion" required="1"/>
@@ -128,6 +126,16 @@
                         </page>
                         <page string="Deuda contable">
                             <field name="debt_move_line_ids"/>
+                        </page>
+                        <page string="Otra Informacion">
+                          <group>
+                            <field name="receiptbook_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
+                            <field name="payment_method_id" attrs="{'required': True}"/>
+                            <field name="currency_id" attrs="{'required': True}"/>
+                            <field name="move_id"/>
+                            <field name="invoice_id"/>
+                            <field name="payment_group_id"/>
+                           </group>
                         </page>
                     </notebook>
                 </sheet>
@@ -167,7 +175,23 @@
         </field>
     </record>
 
+    <!-- Vista Form Partner -->
 
+    <record id="partner_form_inherited"  model="ir.ui.view">
+      <field name="name">Extension Partner form</field>
+      <field name="model">res.partner</field>
+      <field name="inherit_id" ref="base.view_partner_form"/>
+      <field name="arch" type="xml">
+        <xpath expr="//page[3]" position='before'>
+          <page string='Financiera'>
+            <group string="Tasas por defecto">
+              <field name="tasa_fija"/>
+              <field name="tasa_mensual"/>
+            </group>
+          </page>
+        </xpath>
+      </field>
+    </record>
 
     <!-- Menu Principal del modulo (barra superior) - Financiera -->
     <menuitem id="menu_financiera" name="Financiera - Cheques" />

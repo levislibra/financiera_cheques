@@ -94,6 +94,7 @@ class AccountPayment(models.Model):
             uid = self.env.uid
             payment_method_obj = self.pool.get('account.payment.method')
             payment_method_id = payment_method_obj.search(cr, uid, [('code', '=', 'manual'), ('payment_type', '=', 'inbound')])[0]
+            liquidacion_id = self.env[active_model].browse(active_id)
 
             if action == 'cheque_nuevo':
                 rec.update({
@@ -109,6 +110,8 @@ class AccountPayment(models.Model):
                     'currency_id': currency_id,                    
                     'payment_method_id': payment_method_id,
                     'check_vat_tax_id': vat_tax_id,
+                    'check_tasa_fija': liquidacion_id.tasa_fija,
+                    'check_tasa_mensual': liquidacion_id.tasa_mensual,
                 })
             elif action == 'realizar_pago':
                 liquidacion_id = self.env[active_model].browse(active_id)
@@ -199,7 +202,7 @@ class LiquidacionPagar(models.Model):
     _name = 'liquidacion.pago'
 
     payment_date = fields.Date('Fecha de pago', required=True)
-    payment_journal_id = fields.Many2one('account.journal', 'Metodo de pago')
+    payment_journal_id = fields.Many2one('account.journal', 'Metodo de pago', domain="[('type', 'in', ('bank', 'cash'))]")
     payment_amount = fields.Float('Monto')
     payment_communication = fields.Char('Descripcion')
     liquidacion_id = fields.Many2one('liquidacion', 'Liquidacion')
@@ -266,6 +269,7 @@ class LiquidacionPagar(models.Model):
 class Liquidacion(models.Model):
     _name = 'liquidacion'
 
+    _order = 'id desc'
     id = fields.Integer('Nro Liquidacion')
     fecha = fields.Date('Fecha', required=True, default=lambda *a: time.strftime('%Y-%m-%d'))
     active = fields.Boolean('Activa', default=True)
@@ -289,6 +293,11 @@ class Liquidacion(models.Model):
     total_pagos = fields.Float('Total pagos')
     debt_move_line_ids = fields.One2many('account.move.line', 'liquidacion_id', 'Deuda a pagar', compute='_update_debt', default=None)
     saldo = fields.Float('Saldo', compute='_compute_saldo')
+
+    tasa_fija = fields.Float('Tasa fija', related='partner_id.tasa_fija', readonly=True)
+    tasa_mensual = fields.Float('Tasa mensual', related='partner_id.tasa_mensual', readonly=True)
+    saldo_cta_cte = fields.Float('Saldo Cuenta Corriente', compute='_compute_saldo_cta_cte')
+    cheques_en_cartera = fields.Float('Cheques en cartera', compute='_compute_cheques_en_cartera')
 
     @api.model
     def create(self, values):
@@ -368,10 +377,13 @@ class Liquidacion(models.Model):
             bruto += payment.amount
         return bruto
 
+    #@api.multi
     def _compute_saldo(self):
+        #self.ensure_one()
+        saldo = 0
         for line_id in self.debt_move_line_ids:
-            self.saldo += line_id.amount_residual
-        self.saldo = abs(self.saldo)
+            saldo += line_id.amount_residual
+        self.saldo = abs(saldo)
 
     def get_gasto(self):
         gasto = 0
@@ -410,10 +422,41 @@ class Liquidacion(models.Model):
             payment.check_vat_tax_id = self.vat_tax_id.id
 
     @api.one
+    @api.onchange('partner_id')
+    def _compute_saldo_cta_cte(self):
+        cr = self.env.cr
+        uid = self.env.uid
+        line_obj = self.pool.get('account.move.line')
+        line_ids = line_obj.search(cr, uid, [
+            ('partner_id', '=', self.partner_id.id),
+            ('account_id', '=', self.partner_id.property_account_receivable_id.id)
+            ])
+        for _id in line_ids:
+            line_id = line_obj.browse(cr, uid, _id)
+            self.saldo_cta_cte +=line_id.amount_residual
+
+    @api.one
+    @api.onchange('partner_id')
+    def _compute_cheques_en_cartera(self):
+        cr = self.env.cr
+        uid = self.env.uid
+        line_obj = self.pool.get('account.check')
+        line_ids = line_obj.search(cr, uid, [
+            ('partner_id', '=', self.partner_id.id),
+            ('state', '=', 'holding')
+            ])
+        for _id in line_ids:
+            line_id = line_obj.browse(cr, uid, _id)
+            self.cheques_en_cartera += line_id.amount
+
+    @api.one
     def confirmar(self):
-        self.state = 'confirmada'
-        self.confirmar_payments()
-        return True
+        if len(self.payment_ids) == 0:
+            raise UserError("No puede confirmar una liquidacion sin cheques.")
+        else:
+            self.state = 'confirmada'
+            self.confirmar_payments()
+            return True
 
     @api.multi
     def ver_factura(self):
@@ -486,7 +529,7 @@ class Liquidacion(models.Model):
 
     @api.multi
     def pagar_liquidacion(self):
-        if self.saldo > 0:
+        if self.saldo <= 0:
             raise UserError("El saldo de la liquidacion debe ser mayor a cero.")
         else:
             cr = self.env.cr
@@ -523,3 +566,10 @@ class ExtendsAccountMoveLine(models.Model):
 
         rec = super(ExtendsAccountMoveLine, self).create(values)
         return rec
+
+class ExtendsPartner(models.Model):
+    _name = 'res.partner'
+    _inherit = 'res.partner'
+
+    tasa_fija = fields.Float('Tasa de gastos')
+    tasa_mensual = fields.Float('Tasa mensual')
