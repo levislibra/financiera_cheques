@@ -1,7 +1,7 @@
 <openerp>
   <data>
 
-    <!-- check_scanner - Formularios de creacion  -->
+    <!-- check_scanner - Formularios de creacion  
 
     <record id="view_form_check_scanner" model="ir.ui.view">
         <field name="name">Check Scanner Form</field>
@@ -23,7 +23,7 @@
             </form>
         </field>
     </record>
-
+    -->
     <!-- Liquidacions - Formularios de creacion  -->
 
     <record id="view_tree_liquidacion" model="ir.ui.view">
