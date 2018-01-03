@@ -40,7 +40,6 @@
         </field>
     </record>
 
-
     <act_window
     id="new_payment_action"
     name="Realizar Pago"
@@ -63,7 +62,7 @@
                     <button name="facturar" class="oe_highlight" string="Facturar" states="confirmada" type="object" />
                     <button name="ver_factura" class="oe_highlight" string="Ver Factura" states="facturada" type="object" />
 
-                    <!--<button id="new_payment_button" name="%(new_payment_action)d" class="oe_highlight"  string="Pagar" states="confirmada" type="action" /> -->
+                    <button name="pagar_liquidacion" class="oe_highlight"  string="Pagar" states="confirmada,facturada" type="object" />
                     <field name="state" widget="statusbar"/>
                 </header>
                 <sheet class="oe_form_sheet_width_wider">
@@ -81,6 +80,7 @@
                         <field name="vat_tax_id" attrs="{'readonly': [('state', 'not in', ['cotizacion'])], 'invisible': [('factura_electronica', '=', False)], 'required': [('factura_electronica', '=', True)]}"/>
                         <field name="journal_invoice_id" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])],'required': [('factura_electronica', '=', False)], 'invisible': [('factura_electronica', '!=', False)]}" />
                         <field name="journal_invoice_use_doc_id" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])],'required': [('factura_electronica', '=', True)], 'invisible': [('factura_electronica', '=', False)]}" />
+                        <field name="saldo" widget="monetary"/>
                       </group>
                       <group>
                         <field name="receiptbook_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
@@ -123,6 +123,12 @@
                                 </tree>
                             </field>
                         </page>
+                        <page string="Pagos al cliente">
+                            <field name="payment_group_ids"/>
+                        </page>
+                        <page string="Deuda contable">
+                            <field name="debt_move_line_ids"/>
+                        </page>
                     </notebook>
                 </sheet>
             </form>
@@ -135,6 +141,33 @@
         <field name="view_mode">tree,form</field>
         <field name="view_id" ref="view_tree_liquidacion"/>
     </record>
+
+    <!-- View Pagar Liquidacion -->
+
+    <record id="pagar_liquidacion_view" model="ir.ui.view">
+        <field name="name">liquidacion.pago</field>
+        <field name="model">liquidacion.pago</field>
+        <field name="arch" type="xml">
+          <form string="Liquidacion">
+            <header>
+            </header>            
+            <sheet>
+              <group>
+                <field name="payment_date" required="1"/>
+                <field name="payment_journal_id" required="1"/>
+                <field name="payment_amount"/>
+                <field name="payment_communication"/>
+              </group>
+            </sheet>
+            <footer>
+              <button name="confirmar_pagar_liquidacion" string="Registrar Pago" type="object" class="btn-primary"/>
+              <button string="Cancel" class="btn-default" special="cancel"/>
+            </footer>
+          </form>
+        </field>
+    </record>
+
+
 
     <!-- Menu Principal del modulo (barra superior) - Financiera -->
     <menuitem id="menu_financiera" name="Financiera - Cheques" />
