@@ -1,2 +1,2 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_librasoft-financiera-cheques_librasoft-financiera-cheques,librasoft-financiera-cheques.librasoft-financiera-cheques,model_librasoft-financiera-cheques_librasoft-financiera-cheques,,1,0,0,0
+access_financiera_cheques_financiera_cheques,financiera_cheques.financiera_cheques,model_financiera_cheques_financiera_cheques,,1,0,0,0

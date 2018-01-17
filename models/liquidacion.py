@@ -534,7 +534,7 @@ class Liquidacion(models.Model):
         else:
             cr = self.env.cr
             uid = self.env.uid
-            view_ref = self.pool.get('ir.model.data').get_object_reference(cr, uid, 'librasoft-financiera-cheques', 'pagar_liquidacion_view')
+            view_ref = self.pool.get('ir.model.data').get_object_reference(cr, uid, 'financiera_cheques', 'pagar_liquidacion_view')
             view_id = view_ref and view_ref[1] or False,
 
             return {
@@ -573,3 +573,21 @@ class ExtendsPartner(models.Model):
 
     tasa_fija = fields.Float('Tasa de gastos')
     tasa_mensual = fields.Float('Tasa mensual')
+
+class HojaRuta(models.Model):
+    _name = 'financiera.hoja.ruta'
+
+    date = fields.Date('Fecha', required=True)
+    user = fields.Many2one('res.users', 'Responsable')
+    line_ids = fields.One2many('financiera.hoja.ruta.line', 'hoja_ruta_id', 'Deudores')
+
+
+class HojaRutaLine(models.Model):
+    _name = 'financiera.hoja.ruta.line'
+
+    hoja_ruta_id = fields.Many2one('financiera.hoja.ruta', "Hoja de ruta")
+    partner_id = fields.Many2one('res.partner', 'Cliente')
+    cuotas_vencidas = fields.Integer('Cuotas vencidas')
+    monto_cuota = fields.Float('Monto')
+    total = fields.Float('Total')
+    pago = fields.Float('Pago')

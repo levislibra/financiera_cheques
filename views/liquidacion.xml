@@ -67,7 +67,7 @@
                 </header>
                 <sheet class="oe_form_sheet_width_wider">
                   <xpath expr="." position="inside">
-                    <link rel="stylesheet" href="/librasoft-financiera-cheques/static/src/css/liquidacion.css"/>
+                    <link rel="stylesheet" href="/financiera_cheques/static/src/css/liquidacion.css"/>
                   </xpath>
                     <group>
                       <group>
@@ -193,11 +193,25 @@
       </field>
     </record>
 
-    <!-- Menu Principal del modulo (barra superior) - Financiera -->
-    <menuitem id="menu_financiera" name="Financiera - Cheques" />
+    <!-- Menu Principal del modulo (barra superior) -->
+    <menuitem id="menu_financiera" name="Descuento de Cheques" />
     
     <!-- SubMenu 1 - Liquidaciones -->
-    <menuitem id="smenu_liquidaciones" name="Liquidaciones" parent="menu_financiera"  sequence="0" />
-    <menuitem id="smenu_liquidaciones_action" name="Liquidaciones" parent="smenu_liquidaciones" action="liquidacion_action"  sequence="0" />
+    <menuitem id="smenu_ventas" name="Ventas" parent="menu_financiera"  sequence="0" />
+
+    <menuitem id="smenu_compras" name="Compras" parent="menu_financiera"  sequence="1" />
+
+    <menuitem id="smenu_bank_and_check" name="Banco y Cheques" parent="menu_financiera"  sequence="2" />
+    
+    <!-- Actions -->
+    <menuitem id="smenu_liquidaciones_action" name="Liquidaciones" parent="smenu_ventas" action="liquidacion_action"  sequence="0" />
+    <menuitem id="smenu_clientes_action" name="Clientes" parent="smenu_ventas" action="base.action_partner_customer_form"  sequence="1" />
+
+    <menuitem id="smenu_proveedores_action" name="Proveedores" parent="smenu_compras" action="base.action_partner_supplier_form"  sequence="0" />
+
+    <menuitem id="smenu_transferencias_action" name="Transferencias" parent="smenu_bank_and_check" action="account_payment_group.action_account_payments_transfer"  sequence="0" />
+    <menuitem id="smenu_cheques_de_terceros_action" name="Cheques de terceros" parent="smenu_bank_and_check" action="account_check.action_third_check"  sequence="1" />
+
+
   </data>
 </openerp>
