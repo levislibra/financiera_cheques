@@ -1,6 +1,109 @@
 <openerp>
   <data>
 
+    <!-- Firmante -  -->
+
+    <record id="view_tree_firmante" model="ir.ui.view">
+        <field name="name">Firmante Tree</field>
+        <field name="model">firmante</field>
+        <field name="arch" type="xml">
+            <tree string="Firmante">
+                <field name="id"/>
+                <field name="name"/>
+                <field name="cuit"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_form_firmante" model="ir.ui.view">
+        <field name="name">Firmante Form</field>
+        <field name="model">firmante</field>
+        <field name="arch" type="xml">
+            <form string="Firmante">
+                <sheet class="oe_form_sheet_width_wider">
+                    <group>
+                        <field name="id"/>
+                        <field name="name"/>
+                        <field name="cuit"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="firmante_action" model="ir.actions.act_window">
+        <field name="name">Firmante</field>
+        <field name="res_model">firmante</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_tree_firmante"/>
+    </record>
+
+    <!-- Cuentas  - -->
+
+    <record id="view_tree_cuenta" model="ir.ui.view">
+        <field name="name">account.tree</field>
+        <field name="model">account.account</field>
+        <field name="arch" type="xml">
+            <tree string="Cuentas">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="user_type_id" invisible="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_form_cuenta" model="ir.ui.view">
+        <field name="name">account.form</field>
+        <field name="model">account.account</field>
+        <field name="arch" type="xml">
+            <form string="Cuenta">
+                <sheet class="oe_form_sheet_width_wider">
+                    <group>
+                        <field name="name"/>
+                        <field name="code"/>
+                    </group>
+                    <notebook>
+                        <page string="Movimientos">
+                            <field name="move_line_ids">
+                                <tree>
+                                    <field name="date"/>
+                                    <field name="name"/>
+                                    <field name="partner_id"/>
+                                    <field name="debit" sum="Total" widget="monetary"/>
+                                    <field name="credit" sum="Total" widget="monetary"/>
+                                    <field name="balance" sum="Total" widget="monetary"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="filter_tree_cuenta">
+      <field name="name">cuenta.tree.filter</field>
+      <field name="model">account.account</field>
+      <field name="inherit_id" ref="account.view_account_search"/>
+      <field name="arch" type="xml">
+        <search>
+          <filter name="group_for_type" invisible="1" string="Por tipo" context="{'group_by':'user_type_id'}"/>
+        </search>
+      </field>
+    </record>
+
+
+    <record id="cuenta_action" model="ir.actions.act_window">
+        <field name="name">Cuenta</field>
+        <field name="res_model">account.account</field>
+        <field name="view_mode">tree</field>
+        <field name="context">{'search_default_group_for_type': 1}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'tree', 'view_id': ref('view_tree_cuenta')}), 
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_form_cuenta')}),
+            ]"/>
+    </record>
+
     <!-- check_scanner - Formularios de creacion  
 
     <record id="view_form_check_scanner" model="ir.ui.view">
@@ -104,16 +207,18 @@
                                     <field name="state" invisible="1"/>
                                     <!--<field name="check_scanner_id"/>-->
                                     <field name="check_firmante_id" required="1"/>
-                                    <field name="check_number" required="1"/>
+                                    <!--<field name="check_number_char" required="1"/>-->
+                                    <field name="check_number"/>
                                     <field name="check_bank_id" options="{'no_quick_create':True,'no_create_edit':True}" required="1"/>
-                                    <field name="amount"  widget="monetary" sum="Total"/>
+                                    <!--<field name="check_amount_char" widget="char" sum="Total"/>-->
+                                    <field name="amount" invisible="0" sum="Total"/>
                                     <field name="check_issue_date" required="1"/>
                                     <field name="check_payment_date" required="1"/>
                                     <field name="check_fecha_acreditacion" required="1"/>
                                     <field name="check_dias" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
-                                    <field name="check_tasa_fija"/>
+                                    <field name="check_tasa_fija" widget="char"/>
                                     <field name="check_monto_fijo" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
-                                    <field name="check_tasa_mensual"/>
+                                    <field name="check_tasa_mensual" widget="char"/>
                                     <field name="check_monto_mensual" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
                                     <field name="check_vat_tax_id"/>
                                     <field name="check_monto_iva" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
@@ -202,15 +307,21 @@
     <menuitem id="smenu_compras" name="Compras" parent="menu_financiera"  sequence="1" />
 
     <menuitem id="smenu_bank_and_check" name="Banco y Cheques" parent="menu_financiera"  sequence="2" />
+
+    <menuitem id="smenu_informacion" name="Informacion" parent="menu_financiera"  sequence="10" />
     
     <!-- Actions -->
     <menuitem id="smenu_liquidaciones_action" name="Liquidaciones" parent="smenu_ventas" action="liquidacion_action"  sequence="0" />
     <menuitem id="smenu_clientes_action" name="Clientes" parent="smenu_ventas" action="base.action_partner_customer_form"  sequence="1" />
 
     <menuitem id="smenu_proveedores_action" name="Proveedores" parent="smenu_compras" action="base.action_partner_supplier_form"  sequence="0" />
+    <menuitem id="smenu_payable_action" name="Pago a proveedores" parent="smenu_compras" action="account_payment_group.action_account_payments_group_payable"  sequence="5" />
 
     <menuitem id="smenu_transferencias_action" name="Transferencias" parent="smenu_bank_and_check" action="account_payment_group.action_account_payments_transfer"  sequence="0" />
     <menuitem id="smenu_cheques_de_terceros_action" name="Cheques de terceros" parent="smenu_bank_and_check" action="account_check.action_third_check"  sequence="1" />
+    <menuitem id="smenu_apunte_action" name="Banco y caja" parent="smenu_bank_and_check" action="cuenta_action"  sequence="1" />
+
+    <menuitem id="smenu_firmante_action" name="Firmantes" parent="smenu_informacion" action="firmante_action"  sequence="1" />
 
 
   </data>

@@ -62,6 +62,30 @@ class AccountPayment(models.Model):
     check_monto_neto = fields.Float(string='Neto', compute='_check_monto_neto')
     check_scanner_id = fields.Many2one('check.scanner', 'Escaner')
 
+    check_number_char = fields.Char("Numero")
+
+    @api.one
+    @api.onchange('check_number_char')
+    def _change_check_number_char(self):
+        print "change check number char ********----------"
+        try:
+            self.check_number = int(self.check_number_char)
+        except Exception as e:
+            raise UserError("Error al introducir el numero del cheque.")
+
+
+    check_amount_char = fields.Char('Importe')
+
+    @api.one
+    @api.onchange('check_amount_char')
+    def _check_check_amount_char(self):
+        print "check constrains 2"
+        try:
+            self.amount = float(self.check_amount_char)
+        except Exception as e:
+            self.amount = float(self.check_amount_char)
+            raise UserError("Error al introducir el importe del cheque.")
+
 
     @api.model
     def create(self, values):
@@ -95,13 +119,14 @@ class AccountPayment(models.Model):
             payment_method_obj = self.pool.get('account.payment.method')
             payment_method_id = payment_method_obj.search(cr, uid, [('code', '=', 'manual'), ('payment_type', '=', 'inbound')])[0]
             liquidacion_id = self.env[active_model].browse(active_id)
+            partner_id = self.env['res.partner'].browse(partner_id)
 
             if action == 'cheque_nuevo':
                 rec.update({
                     'payment_type': 'inbound',
                     'payment_type_copy': 'inbound',
                     'partner_type': 'customer',
-                    'partner_id': partner_id,
+                    'partner_id': partner_id.id,
                     'journal_id': journal_id,
                     'payment_method_code': 'manual',
                     'check_type': 'third_check',
@@ -110,8 +135,8 @@ class AccountPayment(models.Model):
                     'currency_id': currency_id,                    
                     'payment_method_id': payment_method_id,
                     'check_vat_tax_id': vat_tax_id,
-                    'check_tasa_fija': liquidacion_id.tasa_fija,
-                    'check_tasa_mensual': liquidacion_id.tasa_mensual,
+                    'check_tasa_fija': partner_id.tasa_fija,
+                    'check_tasa_mensual': partner_id.tasa_mensual,
                 })
             elif action == 'realizar_pago':
                 liquidacion_id = self.env[active_model].browse(active_id)
@@ -119,7 +144,7 @@ class AccountPayment(models.Model):
                 fecha = liquidacion_id.fecha
                 rec['payment_type'] = 'outbound'
                 rec['partner_type'] = 'customer'
-                rec['partner_id'] = partner_id
+                rec['partner_id'] = partner_id.id
                 rec['amount'] = amount
                 rec['payment_date'] = fecha
         return rec
@@ -574,20 +599,8 @@ class ExtendsPartner(models.Model):
     tasa_fija = fields.Float('Tasa de gastos')
     tasa_mensual = fields.Float('Tasa mensual')
 
-class HojaRuta(models.Model):
-    _name = 'financiera.hoja.ruta'
+class ExtendsAccountAccount(models.Model):
+    _name = 'account.account'
+    _inherit = 'account.account'
 
-    date = fields.Date('Fecha', required=True)
-    user = fields.Many2one('res.users', 'Responsable')
-    line_ids = fields.One2many('financiera.hoja.ruta.line', 'hoja_ruta_id', 'Deudores')
-
-
-class HojaRutaLine(models.Model):
-    _name = 'financiera.hoja.ruta.line'
-
-    hoja_ruta_id = fields.Many2one('financiera.hoja.ruta', "Hoja de ruta")
-    partner_id = fields.Many2one('res.partner', 'Cliente')
-    cuotas_vencidas = fields.Integer('Cuotas vencidas')
-    monto_cuota = fields.Float('Monto')
-    total = fields.Float('Total')
-    pago = fields.Float('Pago')
+    move_line_ids = fields.One2many('account.move.line', 'account_id', 'Movimientos')

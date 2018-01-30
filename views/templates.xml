@@ -1,5 +1,35 @@
 <openerp>
     <data>
+<!--        <template>
+        <t t-extend="ListView.row">
+            <t t-jquery="td" t-operation="replace"/>
+                <t t-foreach="columns" t-as="column">
+                    <t t-set="number" t-value="column.type === 'integer' or column.type == 'float'"/> <t t-set="modifiers" t-value="column.modifiers_for(asData)"/>
+                    <td t-if="!column.meta and column.invisible !== '1'" t-att-title="column.help" t-attf-class="oe_list_field_cell oe_list_field_#{column.widget or column.type} #{number ? 'oe_number' : ''} #{column.tag === 'button' ? 'oe-button' : ''} #{modifiers.readonly ? 'oe_readonly' : ''}  #{modifiers.required ? 'oe_required' : ''} #{column.value_check(record.get(column.id), column.id) ? 'oe_cust_view' : ''}" t-att-data-field="column.id">
+                        <t t-raw="render_cell(record, column)"/>
+                    </td >
+                </t>
+                <td t-if="options.deletable" class='oe_list_record_delete' width="13px">
+                    <button type="button" name="delete" class="oe_i">d</button>
+                </td>
+        </t>
+        </template>        
+
+        <templates>
+        <tr t-extend="ListView.row">
+            <t t-jquery="td" t-operation="replace">
+                <t t-foreach="columns"   t-as="column">
+                    <t t-set="number" t-value="column.type === 'integer' or column.type == 'float'"/>
+                    <t  t-set="modifiers" t-value="column.modifiers_for(asData)"/>
+                        <td t-if="!column.meta and column.invisible !== '1'" t-att-title="column.help" t-attf-class="oe_list_field_cell oe_list_field_#{column.widget or column.type} #{number ? 'oe_number' : ''} #{column.tag === 'button' ? 'oe-button' : ''} #{modifiers.readonly ? 'oe_readonly' : ''}  #{modifiers.required ? 'oe_required' : ''} #{column.value_check(record.get(column.id), column.id) ? 'oe_cust_view' : ''}" t-att-data-field="column.id">
+                            <t t-raw="render_cell(record, column)"/>
+                        </td >
+                </t>
+            </t>
+        </tr>
+        </templates>
+-->
+
         <!-- <template id="listing"> -->
         <!--   <ul> -->
         <!--     <li t-foreach="objects" t-as="object"> -->
