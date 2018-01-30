@@ -481,6 +481,7 @@ class Liquidacion(models.Model):
         else:
             self.state = 'confirmada'
             self.confirmar_payments()
+            self.facturar()
             return True
 
     @api.multi
@@ -544,7 +545,8 @@ class Liquidacion(models.Model):
                 'invoice_line_ids': [(0, 0, ail), (0, 0, ail2)],
             }
             new_invoice_id = self.env['account.invoice'].create(account_invoice_customer0)
-            #account_invoice_customer0.signal_workflow('invoice_open')
+            #hacer configuracion de validacion automatica
+            new_invoice_id.signal_workflow('invoice_open')
             self.invoice_id = new_invoice_id.id
 
             self.state = 'facturada'
