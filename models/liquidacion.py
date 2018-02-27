@@ -582,6 +582,13 @@ class ExtendsPaymentGroup(models.Model):
 
     liquidacion_id = fields.Many2one('liquidacion', 'Liquidacion')
 
+    @api.one
+    def post(self):
+        rec = super(ExtendsPaymentGroup, self).post()
+        for payment_id in self.payment_ids:
+            print "VALIDAMOS EL COSTOOOOOOOOOOOOOOOOOOOOOO"
+            payment_id.confirm_cost()
+
 class ExtendsAccountMoveLine(models.Model):
     _name = 'account.move.line'
     _inherit = 'account.move.line'

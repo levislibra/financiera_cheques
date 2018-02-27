@@ -302,9 +302,9 @@
     <menuitem id="menu_financiera" name="Descuento de Cheques" />
     
     <!-- SubMenu 1 - Liquidaciones -->
-    <menuitem id="smenu_ventas" name="Ventas" parent="menu_financiera"  sequence="0" />
+    <menuitem id="smenu_ventas" name="Liquidaciones" parent="menu_financiera"  sequence="0" />
 
-    <menuitem id="smenu_compras" name="Compras" parent="menu_financiera"  sequence="1" />
+    <menuitem id="smenu_compras" name="Proveedores" parent="menu_financiera"  sequence="1" />
 
     <menuitem id="smenu_bank_and_check" name="Banco y Cheques" parent="menu_financiera"  sequence="2" />
 
