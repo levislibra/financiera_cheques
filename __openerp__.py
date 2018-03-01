@@ -20,7 +20,7 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'account_accountant', 'account_check'],
+    'depends': ['base', 'account_accountant', 'account_check', 'payment_cost', 'account_statement_move_import'],
 
     # always loaded
     'data': [
