@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Custom report-->
+<openerp>
+<data>
+    <template id="resumen_liquidacion">
+        <t t-call="report.external_layout">
+            <t t-foreach="docs" t-as="o">
+            <div class="page" style="font-size:12px;">
+                <br/><br/><br/><br/>
+                <strong>Liquidacion: </strong><span t-field="o.id"/><br/>
+                <strong>Cliente: </strong><span t-field="o.partner_id"/><br/>
+                <strong>Direccion: </strong><span t-field="o.partner_id.contact_address"/><br/>
+                <strong>Fecha: </strong><span t-field="o.fecha" t-field-options="{&quot;format&quot;: &quot;dd 'de' MMMM 'de' yyyy&quot;}" /><br/>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th style="width:15%;">Firmante</th>
+                            <th style="width:15%;">Nro</th>
+                            <th style="width:15%;">Banco</th>
+                            <th style="width:15%;">Importe</th>
+                            <th style="width:15%;">Vencimiento</th>
+                            <th style="width:15%;">Acreditacion</th>
+                            <th style="width:15%;">Dias</th>
+                            <th style="width:15%;">Tasa gastos</th>
+                            <th style="width:15%;">Gastos</th>
+                            <th style="width:15%;">Tasa interes</th>
+                            <th style="width:15%;">Interes</th>
+                            <t t-if="o.factura_electronica">
+                                <th style="width:15%;">IVA</th>
+                            </t>
+                            <t t-if="o.factura_electronica">
+                                <th style="width:15%;">Monto IVA</th>
+                            </t>
+                            <th style="width:15%;">Neto</th>
+                        </tr>
+                    </thead>
+                    <tbody class="invoice_tbody">
+                        <tr t-foreach="o.payment_ids" t-as="l">
+                            <td style="width:25%;"><span t-field="l.check_firmante_id"/></td>
+                            <td style="width:15%;"><span t-field="l.check_number"/></td>
+                            <td style="width:15%;"><span t-field="l.check_bank_id"/></td>
+                            <td style="width:15%;"><span t-field="l.amount"/></td>
+                            <td style="width:15%;"><span t-field="l.check_payment_date"/></td>
+                            <td style="width:15%;"><span t-field="l.check_fecha_acreditacion"/></td>
+                            <td style="width:15%;"><span t-field="l.check_dias"/></td>
+                            <td style="width:15%;"><span t-field="l.check_tasa_fija"/> %</td>
+                            <td style="width:15%;"><span t-field="l.check_monto_fijo"/></td>
+                            <td style="width:15%;"><span t-field="l.check_tasa_mensual"/> %</td>
+                            <td style="width:15%;"><span t-field="l.check_monto_mensual"/></td>
+                            <t t-if="o.factura_electronica">
+                                <td style="width:15%;"><span t-field="l.check_vat_tax_id"/></td>
+                            </t>
+                            <t t-if="o.factura_electronica">
+                                <td style="width:15%;"><span t-field="l.check_monto_iva"/></td>
+                            </t>
+                            <td style="width:15%;"><span t-field="l.check_monto_neto"/></td>
+                        </tr>
+                        <tr>
+                            <td style="width:25%;"></td>
+                            <td style="width:15%;"></td>
+                            <td style="width:15%;"></td>
+                            <td style="width:15%;"><t t-esc="'{:0,.2f}'.format(sum(l.amount for l in o.payment_ids))"/></td>
+                            <td style="width:15%;"></td>
+                            <td style="width:15%;"></td>
+                            <td style="width:15%;"></td>
+                            <td style="width:15%;"></td>
+                            <td style="width:15%;"><t t-esc="'{:0,.2f}'.format(sum(l.check_monto_fijo for l in o.payment_ids))"/></td>
+                            <td style="width:15%;"></td>
+                            <td style="width:15%;"><t t-esc="'{:0,.2f}'.format(sum(l.check_monto_mensual for l in o.payment_ids))"/></td>
+                            <t t-if="o.factura_electronica">
+                                <td style="width:15%;"></td>
+                            </t>
+                            <t t-if="o.factura_electronica">
+                                <td style="width:15%;"></td>
+                            </t>
+                            <td style="width:15%;"><t t-esc="'{:0,.2f}'.format(sum(l.check_monto_neto for l in o.payment_ids))"/></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            </t>
+        </t>
+    </template>
+
+    <template id="hoja_ruta">
+        <t t-call="report.external_layout">
+            <t t-foreach="docs" t-as="o">
+            <div class="page">
+                <br/><br/><br/><br/>
+
+                <h2>
+                    <span>Recorrido</span>
+                </h2>
+
+                <p><strong>Fecha de emision: </strong><span t-field="o.date" t-field-options='{"format": "d MMMM y"}'/>.</p>
+                <table class="table table-condensed">
+                    <thead>
+                        <tr>
+                            <!--<th style="width:35%;">Cuenta</th>-->
+                            <th style="width:15%;">Prestamo</th>
+                            <th style="width:15%;">Saldo</th>
+                            <th style="width:15%;">Deuda vencida</th>
+                            <th style="width:15%;">Cuota</th>
+                            <th style="width:15%;">Lunes</th>
+                            <th style="width:15%;">Martes</th>
+                            <th style="width:15%;">Miercoles</th>
+                            <th style="width:15%;">Jueves</th>
+                            <th style="width:15%;">Viernes</th>
+                            <th style="width:15%;">Sabado</th>
+                        </tr>
+                    </thead>
+                    <tbody class="invoice_tbody">
+                        <tr t-foreach="o.line_ids" t-as="l">
+                            <!--<td t-if="l.saldo > 0" style="width:25%;"><span t-field="l.cuenta_id"/></td>-->
+                            <td t-if="l.saldo > 0" style="width:15%;"><span t-field="l.prestamo_id"/></td>
+                            <td t-if="l.saldo > 0" style="width:15%;"><span t-field="l.saldo"/></td>
+                            <td t-if="l.saldo > 0" style="width:15%;"><span t-field="l.total"/></td>
+                            <td t-if="l.saldo > 0" style="width:15%;"><span t-field="l.monto_cuota"/></td>
+                            <td t-if="l.saldo > 0" style="width:15%;"></td>
+                            <td t-if="l.saldo > 0" style="width:15%;"></td>
+                            <td t-if="l.saldo > 0" style="width:15%;"></td>
+                            <td t-if="l.saldo > 0" style="width:15%;"></td>
+                            <td t-if="l.saldo > 0" style="width:15%;"></td>
+                            <td t-if="l.saldo > 0" style="width:15%;"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            </t>
+        </t>
+    </template>
+</data>
+</openerp>

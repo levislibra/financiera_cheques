@@ -27,6 +27,8 @@
         # 'security/ir.model.access.csv',
         'views/liquidacion.xml',
         'views/templates.xml',
+        'views/reports.xml',
+        'financiera_cheques_report.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

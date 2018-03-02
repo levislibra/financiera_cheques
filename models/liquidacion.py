@@ -205,17 +205,17 @@ class AccountPayment(models.Model):
     @api.one
     @api.depends('amount', 'check_tasa_fija')
     def _check_monto_fijo(self):
-    	self.check_monto_fijo = self.amount * (self.check_tasa_fija / 100)
+    	self.check_monto_fijo = round(self.amount * (self.check_tasa_fija / 100), 2)
 
     @api.one
     @api.depends('amount', 'check_tasa_mensual', 'check_dias')
     def _check_monto_mensual(self):
-    	self.check_monto_mensual = self.check_dias * ((self.check_tasa_mensual / 30) / 100) * self.amount
+    	self.check_monto_mensual = round(self.check_dias * ((self.check_tasa_mensual / 30) / 100) * self.amount,2)
 
     @api.one
     @api.depends('amount', 'check_monto_fijo', 'check_monto_mensual', 'check_monto_iva')
     def _check_monto_neto(self):
-    	self.check_monto_neto = self.amount - self.check_monto_fijo - self.check_monto_mensual - self.check_monto_iva
+    	self.check_monto_neto = round(self.amount - self.check_monto_fijo - self.check_monto_mensual - self.check_monto_iva, 2)
 
     @api.onchange('check_payment_date')
     def _check_fecha_acreditacion(self):
@@ -586,7 +586,6 @@ class ExtendsPaymentGroup(models.Model):
     def post(self):
         rec = super(ExtendsPaymentGroup, self).post()
         for payment_id in self.payment_ids:
-            print "VALIDAMOS EL COSTOOOOOOOOOOOOOOOOOOOOOO"
             payment_id.confirm_cost()
 
 class ExtendsAccountMoveLine(models.Model):

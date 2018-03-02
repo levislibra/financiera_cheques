@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+	<data>
+		<report 
+		        id="custom_resumen_liquidacion"
+		        model="liquidacion"
+		        string="Liquidacion"
+		        report_type="qweb-pdf"
+		        name="financiera_cheques.resumen_liquidacion"
+		        attachment_use="False"
+		        file="financiera_cheques.resumen_liquidacion"
+		    />
+	    <!--<report 
+		        id="custom_resumen_prestamo"
+		        model="financiera.prestamo"
+		        string="Resumen Prestamo"
+		        report_type="qweb-pdf"
+		        name="financiera_cheques.resumen_prestamo"
+		        attachment_use="False"
+		        file="financiera_cheques.resumen_prestamo"
+		    />-->
+	</data>
+</openerp>
