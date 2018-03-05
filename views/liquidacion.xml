@@ -208,7 +208,7 @@
                                     <!--<field name="check_scanner_id"/>-->
                                     <field name="check_firmante_id" required="1"/>
                                     <!--<field name="check_number_char" required="1"/>-->
-                                    <field name="check_number"/>
+                                    <field name="check_number" required="1"/>
                                     <field name="check_bank_id" options="{'no_quick_create':True,'no_create_edit':True}" required="1"/>
                                     <!--<field name="check_amount_char" widget="char" sum="Total"/>-->
                                     <field name="amount" invisible="0" sum="Total"/>
@@ -299,7 +299,7 @@
     </record>
 
     <!-- Menu Principal del modulo (barra superior) -->
-    <menuitem id="menu_financiera" name="Descuento de Cheques" />
+    <menuitem id="menu_financiera" name="Descuento de Cheques" web_icon="financiera_cheques,static/description/icon.png"/>
     
     <!-- SubMenu 1 - Liquidaciones -->
     <menuitem id="smenu_ventas" name="Liquidaciones" parent="menu_financiera"  sequence="0" />
@@ -311,12 +311,13 @@
     <menuitem id="smenu_informacion" name="Informacion" parent="menu_financiera"  sequence="10" />
     
     <!-- Actions -->
-    <menuitem id="smenu_clientes_action" name="Clientes" parent="smenu_ventas" action="base.action_partner_customer_form"  sequence="0" />
     <menuitem id="smenu_liquidaciones_action" name="Liquidaciones" parent="smenu_ventas" action="liquidacion_action"  sequence="5" />
     <menuitem id="smenu_receivable_action" name="Recibos de cliente" parent="smenu_ventas" action="account_payment_group.action_account_payments_group"  sequence="10"/>
+    <menuitem id="smenu_clientes_action" name="Clientes" parent="smenu_ventas" action="base.action_partner_customer_form"  sequence="15" />
 
-    <menuitem id="smenu_proveedores_action" name="Proveedores" parent="smenu_compras" action="base.action_partner_supplier_form"  sequence="0" />
+
     <menuitem id="smenu_payable_action" name="Recibos de proveedor" parent="smenu_compras" action="account_payment_group.action_account_payments_group_payable"  sequence="5" />
+    <menuitem id="smenu_proveedores_action" name="Proveedores" parent="smenu_compras" action="base.action_partner_supplier_form"  sequence="10" />
 
     <menuitem id="smenu_registro_caja_action" name="Registros de caja" parent="smenu_bank_and_check" action="account.action_view_bank_statement_tree"  sequence="0" />
     <menuitem id="smenu_transferencias_action" name="Transferencias" parent="smenu_bank_and_check" action="account_payment_group.action_account_payments_transfer"  sequence="5" />

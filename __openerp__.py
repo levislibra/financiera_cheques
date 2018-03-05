@@ -3,11 +3,20 @@
     'name': "Financiera - Descuento de cheques",
 
     'summary': """
-        Short (1 phrase/line) summary of the module's purpose, used as
-        subtitle on modules listing or apps.openerp.com""",
+        Descuento de cheques para Financieras.
+        """,
 
     'description': """
-        Long description of module's purpose
+        Modulo para financieras que se dedican a Descuento de cheques
+        Funcionalidades:
+        * Crear Liquidacion a un cliente asociando multiples cheques.
+        * Impresion de liquidacion.
+        * Neto a cuenta corriente.
+        * Pago de liquidacion en efectivo o cheques y generacion de recibo.
+        * Manejo de cartera de cheques.
+        * Gestion de cheques rechazados.
+        * Carga de nota de debito del proveedor por cheque rechazado.
+        * Generacion de nota de debito a cliente por cheque rechazado.
     """,
 
     'author': "LIBRASOFT",
@@ -20,13 +29,13 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'account_accountant', 'account_check', 'payment_cost', 'account_statement_move_import'],
+    'depends': ['base', 'account_accountant', 'l10n_ar_aeroo_payment_group', 'account_debt_management', 'account_check', 'payment_cost', 'account_statement_move_import'],
 
     # always loaded
     'data': [
-        # 'security/ir.model.access.csv',
+        'security/user_groups.xml',
+        'security/ir.model.access.csv',
         'views/liquidacion.xml',
-        'views/templates.xml',
         'views/reports.xml',
         'financiera_cheques_report.xml',
     ],
