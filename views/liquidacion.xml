@@ -299,7 +299,7 @@
     </record>
 
     <!-- Menu Principal del modulo (barra superior) -->
-    <menuitem id="menu_financiera" name="Descuento de Cheques" web_icon="financiera_cheques,static/description/icon.png"/>
+    <menuitem id="menu_financiera" name="Descuento de Cheques" web_icon="financiera_cheques,static/description/icon.png" groups="financiera_cheques.user"/>
     
     <!-- SubMenu 1 - Liquidaciones -->
     <menuitem id="smenu_ventas" name="Liquidaciones" parent="menu_financiera"  sequence="0" />
