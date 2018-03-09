@@ -67,7 +67,6 @@ class AccountPayment(models.Model):
     @api.one
     @api.onchange('check_number_char')
     def _change_check_number_char(self):
-        print "change check number char ********----------"
         try:
             self.check_number = int(self.check_number_char)
         except Exception as e:
@@ -502,6 +501,29 @@ class Liquidacion(models.Model):
             payment.check_type = 'third_check'
         self.payment_group_id.post()
 
+    @api.one
+    def cancelar(self):
+        if self.invoice_id.state == 'paid':
+            raise UserError("La factura esta pagada. Debera cancelar manualmente la liquidacion. Buscar y devolver los cheques al cliente (desde Cheques de terceros) y Crear Factura Rectificativa (desde Otra Informacion -> Factura).")
+        self.state = 'cancelada'
+        for payment_id in self.payment_ids:
+            check = payment_id.check_id
+            if check.state != 'holding':
+                raise UserError("Para cancelar la liquidacion, todos los cheques deben estar En Mano.")
+            else:
+                check.customer_return()
+                for op_id in check.operation_ids:
+                    if op_id.operation == 'returned':
+                        op_id.origin.signal_workflow('invoice_open')
+        if len(self.invoice_id) > 0:
+            if self.invoice_id.state == 'open':
+                self.invoice_id.signal_workflow('invoice_cancel')
+            elif self.invoice_id.state == 'paid':
+                # Crear factura rectificativa
+                pass
+        return True
+
+
     def pagar(self, cr, uid, ids, context=None):
         self.write(cr, uid, ids, {'state':'cotizacion'}, context=None)
         return True
@@ -612,3 +634,9 @@ class ExtendsAccountAccount(models.Model):
     _inherit = 'account.account'
 
     move_line_ids = fields.One2many('account.move.line', 'account_id', 'Movimientos')
+
+class ExtendsAccountDebtLine(models.Model):
+    _name = 'account.debt.line'
+    _inherit = 'account.debt.line'
+
+    _order = 'date desc, id desc'

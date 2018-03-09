@@ -166,6 +166,7 @@
                     <button name="ver_factura" class="oe_highlight" string="Ver Factura" states="facturada" type="object" />
 
                     <button name="pagar_liquidacion" class="oe_highlight"  string="Pagar" states="confirmada,facturada" type="object" />
+                    <button name="cancelar" string="Cancelar" states="confirmada,facturada" type="object" />
                     <field name="state" widget="statusbar"/>
                 </header>
                 <sheet class="oe_form_sheet_width_wider">
