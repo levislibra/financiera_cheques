@@ -640,3 +640,25 @@ class ExtendsAccountDebtLine(models.Model):
     _inherit = 'account.debt.line'
 
     _order = 'date desc, id desc'
+
+class ExtendsAccountCheck(models.Model):
+    _name = 'account.check'
+    _inherit = 'account.check'
+
+    operacion_recibir = fields.Many2one('account.check.operation', 'Op Recibir', compute='_compute_datos', store=True)
+    cliente_id = fields.Many2one('res.partner', 'Cliente', related='operacion_recibir.partner_id')
+    fecha_ingreso = fields.Date('Fecha ingreso', related='operacion_recibir.date')
+    fecha_salida = fields.Date('Fecha salida', compute='_compute_fecha_salida', store=True)
+
+    @api.one
+    @api.depends('operation_ids')
+    def _compute_datos(self):
+        for op_id in self.operation_ids:
+            if op_id.operation == 'holding':
+                self.operacion_recibir = op_id
+
+    @api.one
+    @api.depends('operation_ids')
+    def _compute_fecha_salida(self):
+        if len(self.operation_ids) > 1:
+            self.fecha_salida = self.operation_ids[0].date

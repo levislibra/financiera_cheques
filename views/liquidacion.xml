@@ -212,7 +212,7 @@
                                     <field name="check_number" required="1"/>
                                     <field name="check_bank_id" options="{'no_quick_create':True,'no_create_edit':True}" required="1"/>
                                     <!--<field name="check_amount_char" widget="char" sum="Total"/>-->
-                                    <field name="amount" invisible="0" sum="Total"/>
+                                    <field name="amount" widget="char" invisible="0" sum="Total"/>
                                     <field name="check_issue_date" required="1"/>
                                     <field name="check_payment_date" required="1"/>
                                     <field name="check_fecha_acreditacion" required="1"/>
@@ -298,6 +298,54 @@
         </xpath>
       </field>
     </record>
+
+    <!-- Vista Cartera de Cheques - Cheques de terceros -->
+
+    <record id="cartera_tree_inherited"  model="ir.ui.view">
+      <field name="name">Extension account check tree</field>
+      <field name="model">account.check</field>
+      <field name="inherit_id" ref="account_check.view_account_check_tree"/>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='name']" position="attributes">
+          <attribute name="invisible">1</attribute>
+        </xpath>
+        <xpath expr="//field[@name='issue_date']" position="attributes">
+          <attribute name="invisible">1</attribute>
+        </xpath>
+        <xpath expr="//field[@name='payment_date']" position="attributes">
+          <attribute name="invisible">1</attribute>
+        </xpath>
+        <xpath expr="//field[@name='partner_id']" position="attributes">
+          <attribute name="invisible">1</attribute>
+        </xpath>
+        <xpath expr="//field[@name='bank_id']" position="attributes">
+          <attribute name="invisible">1</attribute>
+        </xpath>
+        <xpath expr="//field[@name='amount']" position="attributes">
+          <attribute name="invisible">1</attribute>
+        </xpath>
+        <xpath expr="//field[@name='state']" position="attributes">
+          <attribute name="invisible">1</attribute>
+        </xpath>
+        <xpath expr="//field[@name='owner_name']" position="attributes">
+          <attribute name="invisible">1</attribute>
+        </xpath>
+
+        <xpath expr="//field[@name='name']" position="after">
+          <field name="cliente_id"/>
+          <field name="fecha_ingreso"/>
+          <field name="owner_name"/>
+          <field name="bank_id"/>
+          <field name="number"/>
+          <field name="amount" sum="Total"/>
+          <field name="payment_date"/>
+          <field name="state"/>
+          <field name="partner_id"/>
+          <field name="fecha_salida"/>
+        </xpath>
+      </field>
+    </record>
+
 
     <!-- Menu Principal del modulo (barra superior) -->
     <menuitem id="menu_financiera" name="Descuento de Cheques" web_icon="financiera_cheques,static/description/icon.png" groups="financiera_cheques.user"/>
