@@ -53,16 +53,22 @@ class AccountPayment(models.Model):
     check_firmante_id = fields.Many2one('firmante', 'Firmante')
     check_fecha_acreditacion = fields.Date('Acreditacion')
     check_dias = fields.Integer(string='Dias', compute='_check_dias')
-    check_tasa_fija = fields.Float('Impuesto al cheque')
-    check_monto_fijo = fields.Float(string='Monto Imp. al cheque', compute='_check_monto_fijo')
-    check_tasa_mensual = fields.Float('Tasa de Interes')
-    check_monto_mensual = fields.Float(string='Monto Interes', compute='_check_monto_mensual')
+    check_tasa_fija = fields.Float('Impuesto')
+    check_monto_fijo = fields.Float(string='Monto', compute='_check_monto_fijo')
+    check_tasa_mensual = fields.Float('Interes')
+    check_monto_mensual = fields.Float(string='Monto', compute='_check_monto_mensual')
     check_vat_tax_id = fields.Many2one('account.tax', 'Tasa de IVA', readonly=True)
     check_monto_iva = fields.Float('IVA', compute='_check_monto_iva')
+    check_monto_costo = fields.Float("Costo", compute='_compute_costo')
     check_monto_neto = fields.Float(string='Neto', compute='_check_monto_neto')
     check_scanner_id = fields.Many2one('check.scanner', 'Escaner')
 
     check_number_char = fields.Char("Numero")
+
+    @api.one
+    @api.depends('amount', 'check_monto_fijo', 'check_monto_mensual', 'check_monto_iva')
+    def _compute_costo(self):
+        self.check_monto_costo = round(self.check_monto_fijo + self.check_monto_mensual + self.check_monto_iva, 2)
 
     @api.one
     @api.onchange('check_number_char')
@@ -649,6 +655,7 @@ class ExtendsAccountCheck(models.Model):
     cliente_id = fields.Many2one('res.partner', 'Cliente', related='operacion_recibir.partner_id')
     fecha_ingreso = fields.Date('Fecha ingreso', related='operacion_recibir.date')
     fecha_salida = fields.Date('Fecha salida', compute='_compute_fecha_salida', store=True)
+    operaciones_count = fields.Integer("Cantidad de operaciones", compute='_compute_operaciones_count')
 
     @api.one
     @api.depends('operation_ids')
@@ -662,3 +669,7 @@ class ExtendsAccountCheck(models.Model):
     def _compute_fecha_salida(self):
         if len(self.operation_ids) > 1:
             self.fecha_salida = self.operation_ids[0].date
+
+    @api.one
+    def _compute_operaciones_count(self):
+        self.operaciones_count = len(self.operation_ids)

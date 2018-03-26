@@ -223,6 +223,7 @@
                                     <field name="check_monto_mensual" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
                                     <field name="check_vat_tax_id"/>
                                     <field name="check_monto_iva" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
+                                    <field name="check_monto_costo" sum="Total costo"/>
                                     <field name="check_monto_neto" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
                                 </tree>
                             </field>
@@ -332,16 +333,23 @@
         </xpath>
 
         <xpath expr="//field[@name='name']" position="after">
-          <field name="cliente_id"/>
           <field name="fecha_ingreso"/>
+          <field name="cliente_id"/>
           <field name="owner_name"/>
           <field name="bank_id"/>
           <field name="number"/>
           <field name="amount" sum="Total"/>
           <field name="payment_date"/>
           <field name="state"/>
-          <field name="partner_id"/>
+          <field name="operaciones_count" invisible="1"/>
+          <field name="partner_id" attrs="{'invisible': [('operaciones_count', '&lt;=', 1)]}" position="attributes"/>
           <field name="fecha_salida"/>
+        </xpath>
+        <xpath expr="//field[@name='owner_name']" position="attributes">
+          <attribute name="string">Titular</attribute>
+        </xpath>
+        <xpath expr="//field[@name='partner_id']" position="attributes">
+          <attribute name="string">Ubicacion</attribute>
         </xpath>
       </field>
     </record>

@@ -10,14 +10,14 @@
 		        attachment_use="False"
 		        file="financiera_cheques.resumen_liquidacion"
 		    />
-	    <!--<report 
-		        id="custom_resumen_prestamo"
-		        model="financiera.prestamo"
-		        string="Resumen Prestamo"
+	    <report 
+		        id="custom_resumen_liquidacion_cliente"
+		        model="liquidacion"
+		        string="Liquidacion sin encabezado"
 		        report_type="qweb-pdf"
-		        name="financiera_cheques.resumen_prestamo"
+		        name="financiera_cheques.resumen_liquidacion_cliente"
 		        attachment_use="False"
-		        file="financiera_cheques.resumen_prestamo"
-		    />-->
+		        file="financiera_cheques.resumen_liquidacion_cliente"
+		    />
 	</data>
 </openerp>
