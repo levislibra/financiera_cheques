@@ -337,8 +337,9 @@
           <field name="cliente_id"/>
           <field name="owner_name"/>
           <field name="bank_id"/>
-          <field name="number"/>
-          <field name="amount" sum="Total"/>
+          <field name="number" widget="char"/>
+          <field name="company_currency_id" invisible="1"/>
+          <field name="amount" widget="monetary" options="{'currency_field': 'company_currency_id'}" sum="Total"/>
           <field name="payment_date"/>
           <field name="state"/>
           <field name="operaciones_count" invisible="1"/>
@@ -356,7 +357,7 @@
 
 
     <!-- Menu Principal del modulo (barra superior) -->
-    <menuitem id="menu_financiera" name="Descuento de Cheques" web_icon="financiera_cheques,static/description/icon.png" groups="financiera_cheques.user"/>
+    <menuitem id="menu_financiera" name="Compra de Cheques" web_icon="financiera_cheques,static/description/icon.png" groups="financiera_cheques.user"/>
     
     <!-- SubMenu 1 - Liquidaciones -->
     <menuitem id="smenu_ventas" name="Liquidaciones" parent="menu_financiera"  sequence="0" />

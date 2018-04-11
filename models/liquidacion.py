@@ -128,6 +128,8 @@ class AccountPayment(models.Model):
 
             if action == 'cheque_nuevo':
                 rec.update({
+                    'name': "Liquidacion #" + str(liquidacion_id.id).zfill(6) + " - cheque",
+                    'communication': "Liquidacion #" + str(liquidacion_id.id).zfill(6) + " - cheque",
                     'payment_type': 'inbound',
                     'payment_type_copy': 'inbound',
                     'partner_type': 'customer',
@@ -564,6 +566,7 @@ class Liquidacion(models.Model):
                 'account_id': journal_id.default_debit_account_id.id,
             }
             account_invoice_customer0 = {
+                'name': "Liquidacion #" + str(self.id).zfill(6) + " - Intereses",
                 'account_id': self.partner_id.property_account_receivable_id.id,
                 'partner_id': self.partner_id.id,
                 'journal_id': journal_id.id,
@@ -656,6 +659,11 @@ class ExtendsAccountCheck(models.Model):
     fecha_ingreso = fields.Date('Fecha ingreso', related='operacion_recibir.date')
     fecha_salida = fields.Date('Fecha salida', compute='_compute_fecha_salida', store=True)
     operaciones_count = fields.Integer("Cantidad de operaciones", compute='_compute_operaciones_count')
+    company_currency_id = fields.Many2one('res.currency', string="Moneda de la Compania", compute='_compute_currency_id')
+    
+    @api.one
+    def _compute_currency_id(self):
+        currency_id = self.env.user.company_id.currency_id.id
 
     @api.one
     @api.depends('operation_ids')
