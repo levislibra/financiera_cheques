@@ -29,7 +29,8 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'account_accountant', 'l10n_ar_aeroo_payment_group', 'account_debt_management', 'account_check', 'payment_cost', 'account_statement_move_import'],
+    'depends': ['base', 'account_check', 'payment_cost',
+                'fixed_term'],
 
     # always loaded
     'data': [

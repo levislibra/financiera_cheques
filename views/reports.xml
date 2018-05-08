@@ -167,6 +167,75 @@
             </t>
     </template>
 
+    <template id="resumen_cta_cte_cliente">
+        <!-- <t t-call="report.external_layout"> -->
+            <t t-foreach="docs" t-as="o">
+                <div class="page" style="font-size:12px;">
+                    <strong>Cliente: </strong><span t-field="o.name"/><br/>
+                    <table class="table table-condensed">
+                        <thead>
+                            <tr>
+                                <th style="width:15%;">Fecha</th>
+                                <th style="width:15%;">Numero de docuemnto</th>
+                                <th style="width:40%;">Detalle</th>
+                                <th style="width:15%;">Importe</th>
+                                <!-- <th style="width:15%;">Importe residual</th> -->
+                            </tr>
+                        </thead>
+                        <tbody class="invoice_tbody">
+                            <tr t-foreach="o.all_receivable_debt_ids" t-as="l">
+                                <td style="width:15%;"><span t-field="l.date"/></td>
+                                <td style="width:15%;"><span t-field="l.document_number"/></td>
+                                <td style="width:40%;"><span t-field="l.name"/></td>
+                                <td style="width:15%;"><span t-field="l.amount"/></td>
+                                <!-- <td style="width:15%;"><span t-field="l.amount_residual"/></td> -->
+                            </tr>
+                            <tr>
+                                <td style="width:15%;"></td>
+                                <td style="width:15%;"></td>
+                                <td style="width:55%;"></td>
+                                <td style="width:15%;">$<t t-esc="'{:0,.2f}'.format(sum(l.amount for l in o.all_receivable_debt_ids))"/></td>
+                                <!-- <td style="width:15%;">$<t t-esc="'{:0,.2f}'.format(sum(l.amount_residual for l in o.all_receivable_debt_ids))"/></td> -->
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+        <!-- </t> -->
+    </template>
+
+    <template id="resumen_cta_cte_proveedor">
+        <!--<t t-call="report.external_layout">-->
+            <t t-foreach="docs" t-as="o">
+            <div class="page" style="font-size:12px;">
+                <strong>Cliente: </strong><span t-field="o.name"/><br/>
+                <table class="table table-condensed">
+                    <thead>
+                        <tr>
+                            <th style="width:15%;">Fecha</th>
+                            <th style="width:15%;">Numero de docuemnto</th>
+                            <th style="width:40%;">Detalle</th>
+                            <th style="width:15%;">Importe</th>
+                        </tr>
+                    </thead>
+                    <tbody class="invoice_tbody">
+                        <tr t-foreach="o.all_payable_debt_ids" t-as="l">
+                            <td style="width:15%;"><span t-field="l.date"/></td>
+                            <td style="width:15%;"><span t-field="l.document_number"/></td>
+                            <td style="width:40%;"><span t-field="l.name"/></td>
+                            <td style="width:15%;"><span t-field="l.amount"/></td>
+                        </tr>
+                        <tr>
+                            <td style="width:15%;"></td>
+                            <td style="width:15%;"></td>
+                            <td style="width:40%;"></td>
+                            <td style="width:15%;">$<t t-esc="'{:0,.2f}'.format(sum(l.amount for l in o.all_payable_debt_ids))"/></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            </t>
+    </template>
  
 </data>
 </openerp>

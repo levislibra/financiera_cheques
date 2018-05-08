@@ -84,7 +84,6 @@ class AccountPayment(models.Model):
     @api.one
     @api.onchange('check_amount_char')
     def _check_check_amount_char(self):
-        print "check constrains 2"
         try:
             self.amount = float(self.check_amount_char)
         except Exception as e:
@@ -128,8 +127,8 @@ class AccountPayment(models.Model):
 
             if action == 'cheque_nuevo':
                 rec.update({
-                    'name': "Liquidacion #" + str(liquidacion_id.id).zfill(6) + " - cheque",
-                    'communication': "Liquidacion #" + str(liquidacion_id.id).zfill(6) + " - cheque",
+                    #'name': "Liquidacion #" + str(liquidacion_id.id).zfill(6) + " - cheque",
+                    #'communication': "Liquidacion #" + str(liquidacion_id.id).zfill(6) + " - cheque",
                     'payment_type': 'inbound',
                     'payment_type_copy': 'inbound',
                     'partner_type': 'customer',
@@ -279,6 +278,7 @@ class LiquidacionPagar(models.Model):
             'currency_id': currency_id,
             'payment_method_id': payment_method_id,
             'cummunication': self.payment_communication,
+            'description_financiera': "Liquidacion #" + str(self.liquidacion_id.id).zfill(8) + " - Pago al cliente",
         }
         payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
         payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'customer')])[0]
@@ -409,7 +409,7 @@ class Liquidacion(models.Model):
             bruto += payment.amount
         return bruto
 
-    #@api.multi
+    @api.one
     def _compute_saldo(self):
         #self.ensure_one()
         saldo = 0
@@ -502,11 +502,17 @@ class Liquidacion(models.Model):
         return result
 
     def confirmar_payments(self):
+        i = 1
         for payment in self.payment_ids:
             payment.check_name = str(payment.check_number) + " " + payment.check_firmante_id.name
             payment.check_owner_name = payment.check_firmante_id.name
             payment.check_owner_vat = payment.check_firmante_id.cuit
             payment.check_type = 'third_check'
+            if i == len(self.payment_ids):
+                payment.description_financiera = "Liquidacion #" + str(self.id).zfill(8) + " - Cheques - " + str(payment.check_number)
+            elif payment.check_number > 0:
+                payment.description_financiera = ' ' + str(payment.check_number)
+            i += 1
         self.payment_group_id.post()
 
     @api.one
@@ -540,9 +546,12 @@ class Liquidacion(models.Model):
     def facturar(self):
         journal_id = None
         vat_tax_id = None
+        invoice_line_tax_ids = None
+
         if self.factura_electronica:
             journal_id = self.journal_invoice_use_doc_id
             vat_tax_id = self.vat_tax_id.id
+            invoice_line_tax_ids = [(6, 0, [vat_tax_id])]
         else:
             journal_id = self.journal_invoice_id
         if journal_id != False and journal_id != None:
@@ -551,8 +560,8 @@ class Liquidacion(models.Model):
                 'name': "Interes por servicios financieros",
                 'quantity':1,
                 'price_unit': self.get_interes(),
-                #'vat_tax_id': vat_tax_id,
-                #'invoice_line_tax_ids':  [vat_tax_id],
+                'vat_tax_id': vat_tax_id,
+                'invoice_line_tax_ids': invoice_line_tax_ids,
                 'account_id': journal_id.default_debit_account_id.id,
             }
 
@@ -562,11 +571,12 @@ class Liquidacion(models.Model):
                 'quantity':1,
                 'price_unit': self.get_gasto(),
                 #'vat_tax_id': vat_tax_id,
-                #'invoice_line_tax_ids': [vat_tax_id],
+                #'invoice_line_tax_ids': [(6, 0, [vat_tax_id])],
                 'account_id': journal_id.default_debit_account_id.id,
             }
             account_invoice_customer0 = {
-                'name': "Liquidacion #" + str(self.id).zfill(6) + " - Intereses",
+                'name': "Liquidacion #" + str(self.id).zfill(8) + " - Intereses",
+                #'description_financiera': "Liquidacion #" + str(self.id).zfill(6) + " - Intereses",
                 'account_id': self.partner_id.property_account_receivable_id.id,
                 'partner_id': self.partner_id.id,
                 'journal_id': journal_id.id,
@@ -625,11 +635,11 @@ class ExtendsAccountMoveLine(models.Model):
 
     liquidacion_id = fields.Many2one('liquidacion', 'Liquidacion')
 
-    @api.model
-    def create(self, values):
+    # @api.model
+    # def create(self, values):
 
-        rec = super(ExtendsAccountMoveLine, self).create(values)
-        return rec
+    #     rec = super(ExtendsAccountMoveLine, self).create(values)
+    #     return rec
 
 class ExtendsPartner(models.Model):
     _name = 'res.partner'
@@ -649,6 +659,7 @@ class ExtendsAccountDebtLine(models.Model):
     _inherit = 'account.debt.line'
 
     _order = 'date desc, id desc'
+
 
 class ExtendsAccountCheck(models.Model):
     _name = 'account.check'

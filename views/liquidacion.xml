@@ -137,7 +137,7 @@
                 <field name="id"/>
                 <field name="fecha"/>
                 <field name="partner_id"/>
-                <!--<field name="saldo"/>-->
+                <field name="saldo"/>
                 <field name="state"/>
             </tree>
         </field>
@@ -175,9 +175,9 @@
                   </xpath>
                     <group>
                       <group>
-                        <field name="id"/>
+                        <label for="id" string="Liquidacion Nro"/><h3><field name="id"/></h3>
                         <field name="fecha" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" context="{'fecha': fecha}"/>
-                        <field name="partner_id" attrs="{'readonly': [('state', '!=', 'cotizacion')]}"/>
+                        <label for="partner_id"/><h2><field name="partner_id" attrs="{'readonly': [('state', '!=', 'cotizacion')]}"/></h2>
                         <field name="analytic_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': True}"/>
                         <field name="journal_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
                         <field name="factura_electronica" attrs="{'readonly': [('state', 'not in', ['cotizacion'])]}"/>
