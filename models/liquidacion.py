@@ -692,3 +692,7 @@ class ExtendsAccountCheck(models.Model):
     @api.one
     def _compute_operaciones_count(self):
         self.operaciones_count = len(self.operation_ids)
+
+    # Override function
+    def _check_unique(self):
+        return True
