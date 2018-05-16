@@ -179,7 +179,7 @@
                                 <th style="width:15%;">Numero de docuemnto</th>
                                 <th style="width:40%;">Detalle</th>
                                 <th style="width:15%;">Importe</th>
-                                <!-- <th style="width:15%;">Importe residual</th> -->
+                                <th style="width:15%;">Saldo acumulado</th>
                             </tr>
                         </thead>
                         <tbody class="invoice_tbody">
@@ -187,15 +187,15 @@
                                 <td style="width:15%;"><span t-field="l.date"/></td>
                                 <td style="width:15%;"><span t-field="l.document_number"/></td>
                                 <td style="width:40%;"><span t-field="l.name"/></td>
-                                <td style="width:15%;"><span t-field="l.amount"/></td>
-                                <!-- <td style="width:15%;"><span t-field="l.amount_residual"/></td> -->
+                                <td style="width:15%;"><span t-field="l.amount" t-field-options='{"widget": "monetary", "display_currency": "o.currency_id"}'/></td>
+                                <td style="width:15%;"><span t-field="l.total_balance_receivable" t-field-options='{"widget": "monetary", "display_currency": "o.currency_id"}'/></td>
                             </tr>
                             <tr>
                                 <td style="width:15%;"></td>
                                 <td style="width:15%;"></td>
                                 <td style="width:55%;"></td>
                                 <td style="width:15%;">$<t t-esc="'{:0,.2f}'.format(sum(l.amount for l in o.all_receivable_debt_ids))"/></td>
-                                <!-- <td style="width:15%;">$<t t-esc="'{:0,.2f}'.format(sum(l.amount_residual for l in o.all_receivable_debt_ids))"/></td> -->
+                                <td style="width:15%;"></td>
                             </tr>
                         </tbody>
                     </table>
@@ -216,6 +216,7 @@
                             <th style="width:15%;">Numero de docuemnto</th>
                             <th style="width:40%;">Detalle</th>
                             <th style="width:15%;">Importe</th>
+                            <th style="width:15%;">Saldo acumualdo</th>
                         </tr>
                     </thead>
                     <tbody class="invoice_tbody">
@@ -223,13 +224,15 @@
                             <td style="width:15%;"><span t-field="l.date"/></td>
                             <td style="width:15%;"><span t-field="l.document_number"/></td>
                             <td style="width:40%;"><span t-field="l.name"/></td>
-                            <td style="width:15%;"><span t-field="l.amount"/></td>
+                            <td style="width:15%;"><span t-field="l.amount" t-field-options='{"widget": "monetary", "display_currency": "o.currency_id"}'/></td>
+                            <td style="width:15%;"><span t-field="l.total_balance_payable" t-field-options='{"widget": "monetary", "display_currency": "o.currency_id"}'/></td>
                         </tr>
                         <tr>
                             <td style="width:15%;"></td>
                             <td style="width:15%;"></td>
                             <td style="width:40%;"></td>
                             <td style="width:15%;">$<t t-esc="'{:0,.2f}'.format(sum(l.amount for l in o.all_payable_debt_ids))"/></td>
+                            <td style="width:15%;"></td>
                         </tr>
                     </tbody>
                 </table>
