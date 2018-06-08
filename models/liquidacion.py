@@ -174,28 +174,31 @@ class AccountPayment(models.Model):
             fecha_inicial = datetime.strptime(fecha_inicial_str, formato_fecha)
             fecha_final = datetime.strptime(fecha_final_str, formato_fecha)
             diferencia = fecha_final - fecha_inicial
-            ultimos_dias = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-            i = 0
-            fines_de_mes = []
-            while fecha_inicial < fecha_final:
-                ano_actual = fecha_inicial.year
-                mes_actual = fecha_inicial.month
-                dia_actual_fin_de_mes = ultimos_dias[mes_actual-1]
-                fecha_fin_de_mes_str = str(ano_actual)+"-"+str(mes_actual)+"-"+str(dia_actual_fin_de_mes)
-                fecha_fin_de_mes = datetime.strptime(fecha_fin_de_mes_str, formato_fecha)
-                if fecha_fin_de_mes >= fecha_inicial and fecha_fin_de_mes <= fecha_final:
-                    fines_de_mes.append(fecha_fin_de_mes)
+            # ultimos_dias = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+            # i = 0
+            # fines_de_mes = []
+            # print "caclulamos dias"
+            # while fecha_inicial < fecha_final:
+            #     print i
+            #     print fecha_inicial
+            #     ano_actual = fecha_inicial.year
+            #     mes_actual = fecha_inicial.month
+            #     dia_actual_fin_de_mes = ultimos_dias[mes_actual-1]
+            #     fecha_fin_de_mes_str = str(ano_actual)+"-"+str(mes_actual)+"-"+str(dia_actual_fin_de_mes)
+            #     fecha_fin_de_mes = datetime.strptime(fecha_fin_de_mes_str, formato_fecha)
+            #     if fecha_fin_de_mes >= fecha_inicial and fecha_fin_de_mes <= fecha_final:
+            #         fines_de_mes.append(fecha_fin_de_mes)
 
-                if mes_actual == 12:
-                    mes_proximo = 1
-                    ano_proximo = ano_actual + 1
-                else:
-                    mes_proximo = mes_actual + 1
-                    ano_proximo = ano_actual
-                dia_proximo = 15
-                fecha_inicial_str = str(ano_proximo)+"-"+str(mes_proximo)+"-"+str(dia_proximo)
-                fecha_inicial = datetime.strptime(fecha_inicial_str, formato_fecha)
-                i = i + 1
+            #     if mes_actual == 12:
+            #         mes_proximo = 1
+            #         ano_proximo = ano_actual + 1
+            #     else:
+            #         mes_proximo = mes_actual + 1
+            #         ano_proximo = ano_actual
+            #     dia_proximo = 15
+            #     fecha_inicial_str = str(ano_proximo)+"-"+str(mes_proximo)+"-"+str(dia_proximo)
+            #     fecha_inicial = datetime.strptime(fecha_inicial_str, formato_fecha)
+            #     i = i + 1
             if diferencia.days > 0:
                 self.check_dias = diferencia.days
             else:
@@ -575,8 +578,8 @@ class Liquidacion(models.Model):
                 'account_id': journal_id.default_debit_account_id.id,
             }
             account_invoice_customer0 = {
-                'name': "Liquidacion #" + str(self.id).zfill(8) + " - Intereses",
-                #'description_financiera': "Liquidacion #" + str(self.id).zfill(6) + " - Intereses",
+                # 'name': "Liquidacion #" + str(self.id).zfill(8) + " - Intereses",
+                'description_financiera': "Liquidacion #" + str(self.id).zfill(6) + " - Intereses",
                 'account_id': self.partner_id.property_account_receivable_id.id,
                 'partner_id': self.partner_id.id,
                 'journal_id': journal_id.id,
