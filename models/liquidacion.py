@@ -334,6 +334,12 @@ class Liquidacion(models.Model):
     saldo_cta_cte = fields.Float('Saldo Cuenta Corriente', compute='_compute_saldo_cta_cte')
     cheques_en_cartera = fields.Float('Cheques en cartera', compute='_compute_cheques_en_cartera')
 
+    type_operation = fields.Selection([('compra', 'Compra'), ('venta', 'Venta')], default='compra', string='Tipo de operacion', readonly=True)
+    cheques_venta_ids = fields.Many2many('account.check', string='Cheques', copy=False, states={'draft': [('readonly', '=', False)]})
+    account_id = fields.Many2one('account.account', 'Cuenta')
+    property_account_receivable_id = fields.Integer('Default debit id', compute='_compute_receivable')
+    property_account_payable_id = fields.Integer('Default Credit id', compute='_compute_payable')
+
     @api.model
     def create(self, values):
         cr = self.env.cr
@@ -342,19 +348,18 @@ class Liquidacion(models.Model):
         payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'customer')])[0]
         currency_id = self.env.user.company_id.currency_id.id
 
-        apg_values = {
-            'payment_date': values['fecha'],
-            'company_id': 1,
-            'partner_id': values['partner_id'],
-            'currency_id': currency_id,
-            'receiptbook_id': payment_group_receiptbook_id,
-            'partner_type': 'customer',
-            'account_internal_type': 'receivable',
-            #'payment_ids': [(0,0,ap_values)],
-            #'debt_move_line_ids': self._debt_not_reconcilie()[0],
-        }
-        new_payment_group_id = self.env['account.payment.group'].create(apg_values)
-        values['payment_group_id'] = new_payment_group_id.id
+        if self.type_operation == 'compra':
+            apg_values = {
+                'payment_date': values['fecha'],
+                'company_id': 1,
+                'partner_id': values['partner_id'],
+                'currency_id': currency_id,
+                'receiptbook_id': payment_group_receiptbook_id,
+                'partner_type': 'customer',
+                'account_internal_type': 'receivable',
+            }
+            new_payment_group_id = self.env['account.payment.group'].create(apg_values)
+            values['payment_group_id'] = new_payment_group_id.id
 
         rec = super(Liquidacion, self).create(values)
         return rec
@@ -369,22 +374,33 @@ class Liquidacion(models.Model):
 
         cr = self.env.cr
         uid = self.env.uid
-        payment_method_obj = self.pool.get('account.payment.method')
-        payment_method_id = payment_method_obj.search(cr, uid, [('code', '=', 'received_third_check')])[0]
+        if self.type_operation == 'compra':
+            payment_method_obj = self.pool.get('account.payment.method')
+            payment_method_id = payment_method_obj.search(cr, uid, [('code', '=', 'received_third_check')])[0]
 
-        payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
-        payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'customer')])[0]
-        currency_id = self.env.user.company_id.currency_id.id
+            payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
+            payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'customer')])[0]
+            currency_id = self.env.user.company_id.currency_id.id
 
-        payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
-        payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'customer')])[0]
-        
-        rec.update({
-            'receiptbook_id': payment_group_receiptbook_id,
-            'payment_method_id': payment_method_id,
-            'currency_id': currency_id,
-        })
+            payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
+            payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'customer')])[0]
+            
+            rec.update({
+                'receiptbook_id': payment_group_receiptbook_id,
+                'payment_method_id': payment_method_id,
+                'currency_id': currency_id,
+            })
         return rec
+
+    @api.one
+    @api.onchange('partner_id')
+    def _compute_receivable(self):
+        self.property_account_receivable_id = self.partner_id.property_account_receivable_id.id
+
+    @api.one
+    @api.onchange('partner_id')
+    def _compute_payable(self):
+        self.property_account_payable_id = self.partner_id.property_account_payable_id.id
 
     @api.one
     def _update_debt(self):

@@ -161,12 +161,12 @@
         <field name="arch" type="xml">
             <form string="Liquidacion">
                 <header>
-                    <button name="confirmar" class="oe_highlight" string="Confirmar" states="cotizacion" type="object" />
-                    <button name="facturar" class="oe_highlight" string="Facturar" states="confirmada" type="object" />
-                    <button name="ver_factura" class="oe_highlight" string="Ver Factura" states="facturada" type="object" />
+                    <button name="confirmar" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', '!=', 'cotizacion')]}" class="oe_highlight" string="Confirmar" type="object" />
+                    <button name="facturar" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', '!=', 'confirmada')]}" class="oe_highlight" string="Facturar" type="object" />
+                    <button name="ver_factura" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', '!=', 'facturada')]}" class="oe_highlight" string="Ver Factura" type="object" />
 
-                    <button name="pagar_liquidacion" class="oe_highlight"  string="Pagar" states="confirmada,facturada" type="object" />
-                    <button name="cancelar" string="Cancelar" states="confirmada,facturada" type="object" />
+                    <button name="pagar_liquidacion" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', '!=', 'facturada')]}" class="oe_highlight"  string="Pagar" type="object" />
+                    <button name="cancelar" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', 'not in', ['confirmada', 'facturada'])]}" string="Cancelar" type="object" />
                     <field name="state" widget="statusbar"/>
                 </header>
                 <sheet class="oe_form_sheet_width_wider">
@@ -176,6 +176,7 @@
                     <group>
                       <group>
                         <label for="id" string="Liquidacion Nro"/><h3><field name="id"/></h3>
+                        <field name="type_operation" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" readonly="1"/>
                         <field name="fecha" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" context="{'fecha': fecha}"/>
                         <label for="partner_id"/><h2><field name="partner_id" attrs="{'readonly': [('state', '!=', 'cotizacion')]}"/></h2>
                         <field name="analytic_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': True}"/>
@@ -195,7 +196,16 @@
                     </group>
                     <notebook>
                         <page string="Cheques">
-                            <field name="payment_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" context="{'active_model': 'liquidacion', 'action': 'cheque_nuevo', 'fecha': fecha, 'partner_id': partner_id, 'journal_id': journal_id, 'receiptbook_id': receiptbook_id, 'payment_method_id': payment_method_id, 'currency_id': currency_id, 'vat_tax_id': vat_tax_id, 'active_id': id}">
+                            <field name="cheques_venta_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': [('type_operation', '=', 'compra')]}" options="{'no_create': True}" domain="[('state', '=', 'holding'), ('type', '=', 'third_check')]" widget="many2many">
+                                <tree edit="false">
+                                    <field name="name"/>
+                                    <field name="payment_date"/>
+                                    <field name="amount" sum="Total"/>
+                                    <field name="state" invisible="1"/>
+                                </tree>
+                            </field>
+                            <!-- ('journal_id', '=', journal_venta_id),  -->
+                            <field name="payment_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': [('type_operation', '=', 'venta')]}" context="{'active_model': 'liquidacion', 'action': 'cheque_nuevo', 'fecha': fecha, 'partner_id': partner_id, 'journal_id': journal_id, 'receiptbook_id': receiptbook_id, 'payment_method_id': payment_method_id, 'currency_id': currency_id, 'vat_tax_id': vat_tax_id, 'active_id': id}">
                                 <tree string="Cheques" editable="bottom" >
                                     <field name="partner_type" invisible="1"/>
                                     <field name="currency_id" invisible="1"/>
@@ -251,9 +261,20 @@
     </record>
 
     <record id="liquidacion_action" model="ir.actions.act_window">
-        <field name="name">Liqudiaciones</field>
+        <field name="name">Compra de cheques</field>
         <field name="res_model">liquidacion</field>
         <field name="view_mode">tree,form</field>
+        <field name="context">{'default_type_operation': 'compra'}</field>
+        <field name="domain">[('type_operation','=', 'compra')]</field>        
+        <field name="view_id" ref="view_tree_liquidacion"/>
+    </record>
+
+    <record id="liquidacion_venta_action" model="ir.actions.act_window">
+        <field name="name">Venta de cheques</field>
+        <field name="res_model">liquidacion</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'default_type_operation': 'venta'}</field>
+        <field name="domain">[('type_operation','=', 'venta')]</field>        
         <field name="view_id" ref="view_tree_liquidacion"/>
     </record>
 
@@ -357,12 +378,12 @@
 
 
     <!-- Menu Principal del modulo (barra superior) -->
-    <menuitem id="menu_financiera" name="Compra de Cheques" web_icon="financiera_cheques,static/description/icon.png" groups="financiera_cheques.user"/>
+    <menuitem id="menu_financiera" name="Compra-Venta de Cheques" web_icon="financiera_cheques,static/description/icon.png" groups="financiera_cheques.user"/>
 
     <menuitem id="menu_cartera_action" name="Cartera de cheques" action="account_check.action_third_check" web_icon="financiera_cheques,static/description/icon_cartera.png" sequence="10" />
     
     <!-- SubMenu 1 - Liquidaciones -->
-    <menuitem id="smenu_ventas" name="Liquidaciones" parent="menu_financiera"  sequence="0" />
+    <menuitem id="smenu_ventas" name="Clientes" parent="menu_financiera"  sequence="0" />
 
     <menuitem id="smenu_compras" name="Proveedores" parent="menu_financiera"  sequence="10" />
 
@@ -375,13 +396,14 @@
 
     
     <!-- Actions -->
-    <menuitem id="smenu_liquidaciones_action" name="Liquidaciones" parent="smenu_ventas" action="liquidacion_action"  sequence="5" />
+    <menuitem id="smenu_liquidaciones_action" name="Compra de cheques" parent="smenu_ventas" action="liquidacion_action"  sequence="5" />
     <menuitem id="smenu_receivable_action" name="Recibos de cliente" parent="smenu_ventas" action="account_payment_group.action_account_payments_group"  sequence="10"/>
     <menuitem id="smenu_clientes_action" name="Clientes" parent="smenu_ventas" action="base.action_partner_customer_form"  sequence="15" />
 
 
-    <menuitem id="smenu_fixed_term_action" name="Plazos Fijos" parent="smenu_compras" action="fixed_term.fixed_term_list_action"  sequence="1" />
-    <menuitem id="smenu_payable_action" name="Recibos de proveedor" parent="smenu_compras" action="account_payment_group.action_account_payments_group_payable"  sequence="10" />
+    <menuitem id="smenu_venta_cheques_action" name="Venta de Cheques" parent="smenu_compras" action="liquidacion_venta_action"  sequence="1" />
+    <menuitem id="smenu_fixed_term_action" name="Plazos Fijos" parent="smenu_compras" action="fixed_term.fixed_term_list_action"  sequence="10" />
+    <menuitem id="smenu_payable_action" name="Recibos de proveedor" parent="smenu_compras" action="account_payment_group.action_account_payments_group_payable"  sequence="20" />
     <menuitem id="smenu_proveedores_action" name="Proveedores" parent="smenu_compras" action="base.action_partner_supplier_form"  sequence="20" />
 
     <menuitem id="smenu_registro_caja_action" name="Registros de caja" parent="smenu_bank_and_check" action="account.action_view_bank_statement_tree"  sequence="0" />
