@@ -39,6 +39,8 @@
         'views/liquidacion.xml',
         'views/reports.xml',
         'financiera_cheques_report.xml',
+        'data/defaultdata.xml',
+        'wizards/financiera_cheques_wizard_view.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

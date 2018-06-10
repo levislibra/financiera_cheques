@@ -231,7 +231,7 @@ class AccountPayment(models.Model):
         print("payment_date change")
         self.check_fecha_acreditacion = self.check_payment_date
 
-
+# Clase Obsoleta - Usamos Wizards
 class LiquidacionPagar(models.Model):
     _name = 'liquidacion.pago'
 
@@ -241,65 +241,65 @@ class LiquidacionPagar(models.Model):
     payment_communication = fields.Char('Descripcion')
     liquidacion_id = fields.Many2one('liquidacion', 'Liquidacion')
 
-    @api.model
-    def default_get(self, fields):
-        rec = super(LiquidacionPagar, self).default_get(fields)
-        context = dict(self._context or {})
-        active_model = context.get('active_model')
-        active_ids = context.get('active_ids')
-        active_id = context.get('active_id')
+    # @api.model
+    # def default_get(self, fields):
+    #     rec = super(LiquidacionPagar, self).default_get(fields)
+    #     context = dict(self._context or {})
+    #     active_model = context.get('active_model')
+    #     active_ids = context.get('active_ids')
+    #     active_id = context.get('active_id')
 
-        cr = self.env.cr
-        uid = self.env.uid
-        liquidacion_obj = self.pool.get('liquidacion')
-        liquidacion_id = liquidacion_obj.browse(cr, uid, active_id, context=context)
-        rec.update({
-            'payment_date': liquidacion_id.fecha,
-            'payment_amount': abs(liquidacion_id.saldo),
-            'liquidacion_id': active_id,
-            'payment_communication': "Pago liquidacion " + str(liquidacion_id.id).zfill(5),
-        })
-        return rec
+    #     cr = self.env.cr
+    #     uid = self.env.uid
+    #     liquidacion_obj = self.pool.get('liquidacion')
+    #     liquidacion_id = liquidacion_obj.browse(cr, uid, active_id, context=context)
+    #     rec.update({
+    #         'payment_date': liquidacion_id.fecha,
+    #         'payment_amount': abs(liquidacion_id.saldo),
+    #         'liquidacion_id': active_id,
+    #         'payment_communication': "Pago liquidacion " + str(liquidacion_id.id).zfill(5),
+    #     })
+    #     return rec
 
-    @api.one
-    def confirmar_pagar_liquidacion(self):
-        currency_id = self.env.user.company_id.currency_id.id
-        cr = self.env.cr
-        uid = self.env.uid
+    # @api.one
+    # def confirmar_pagar_liquidacion(self):
+    #     currency_id = self.env.user.company_id.currency_id.id
+    #     cr = self.env.cr
+    #     uid = self.env.uid
 
-        #Pago al cliente
-        payment_method_obj = self.pool.get('account.payment.method')
-        payment_method_id = payment_method_obj.search(cr, uid, [('code', '=', 'manual'), ('payment_type', '=', 'outbound')])[0]
-        ap_values = {
-            'payment_type': 'outbound',
-            'partner_type': 'customer',
-            'partner_id': self.liquidacion_id.partner_id.id,
-            'amount': self.payment_amount,
-            'payment_date': self.payment_date,
-            'journal_id': self.payment_journal_id.id,
-            'payment_method_code': 'manual',
-            'currency_id': currency_id,
-            'payment_method_id': payment_method_id,
-            'cummunication': self.payment_communication,
-            'description_financiera': "Liquidacion #" + str(self.liquidacion_id.id).zfill(8) + " - Pago al cliente",
-        }
-        payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
-        payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'customer')])[0]
-        apg_values = {
-            'payment_date': self.payment_date,
-            'company_id': 1,
-            'partner_id': self.liquidacion_id.partner_id.id,
-            'currency_id': currency_id,
-            'payment_ids': [(0,0,ap_values)],
-            'receiptbook_id': payment_group_receiptbook_id,
-            'partner_type': 'customer',
-            'account_internal_type': 'payable',
-            'debt_move_line_ids': self.liquidacion_id._debt_not_reconcilie()[0],
-            'communication': self.payment_communication,
-        }
-        new_payment_group_id = self.env['account.payment.group'].create(apg_values)
-        new_payment_group_id.post()
-        self.liquidacion_id.payment_group_ids = [new_payment_group_id.id]
+    #     #Pago al cliente
+    #     payment_method_obj = self.pool.get('account.payment.method')
+    #     payment_method_id = payment_method_obj.search(cr, uid, [('code', '=', 'manual'), ('payment_type', '=', 'outbound')])[0]
+    #     ap_values = {
+    #         'payment_type': 'outbound',
+    #         'partner_type': 'customer',
+    #         'partner_id': self.liquidacion_id.partner_id.id,
+    #         'amount': self.payment_amount,
+    #         'payment_date': self.payment_date,
+    #         'journal_id': self.payment_journal_id.id,
+    #         'payment_method_code': 'manual',
+    #         'currency_id': currency_id,
+    #         'payment_method_id': payment_method_id,
+    #         'cummunication': self.payment_communication,
+    #         'description_financiera': "Liquidacion #" + str(self.liquidacion_id.id).zfill(8) + " - Pago al cliente",
+    #     }
+    #     payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
+    #     payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'customer')])[0]
+    #     apg_values = {
+    #         'payment_date': self.payment_date,
+    #         'company_id': 1,
+    #         'partner_id': self.liquidacion_id.partner_id.id,
+    #         'currency_id': currency_id,
+    #         'payment_ids': [(0,0,ap_values)],
+    #         'receiptbook_id': payment_group_receiptbook_id,
+    #         'partner_type': 'customer',
+    #         'account_internal_type': 'payable',
+    #         #'debt_move_line_ids': self.liquidacion_id._debt_not_reconcilie()[0],
+    #         'communication': self.payment_communication,
+    #     }
+    #     new_payment_group_id = self.env['account.payment.group'].create(apg_values)
+    #     new_payment_group_id.post()
+    #     self.liquidacion_id.payment_group_ids = [new_payment_group_id.id]
 
 class Liquidacion(models.Model):
     _name = 'liquidacion'
@@ -323,39 +323,44 @@ class Liquidacion(models.Model):
     factura_electronica = fields.Boolean('¿Factura electronica?', default=False)
     vat_tax_id = fields.Many2one('account.tax', 'Tasa de IVA', domain="[('type_tax_use', '=', 'sale')]", readonly=True)
     payment_group_id = fields.Many2one('account.payment.group', 'Contenedor de cheques', readonly=True)
+    # Campo obsoleto - Reemplazado por widget
     pago_ids = fields.One2many('liquidacion.pago', 'liquidacion_id', 'Pagos')
     payment_group_ids = fields.One2many('account.payment.group', 'liquidacion_id','Pagos al cliente', readonly=True)
     total_pagos = fields.Float('Total pagos')
+    # Campo obsoleto
     debt_move_line_ids = fields.One2many('account.move.line', 'liquidacion_id', 'Deuda a pagar', compute='_update_debt', default=None)
     saldo = fields.Float('Saldo', compute='_compute_saldo')
 
     tasa_fija = fields.Float('Tasa fija', related='partner_id.tasa_fija', readonly=True)
     tasa_mensual = fields.Float('Tasa mensual', related='partner_id.tasa_mensual', readonly=True)
-    saldo_cta_cte = fields.Float('Saldo Cuenta Corriente', compute='_compute_saldo_cta_cte')
-    cheques_en_cartera = fields.Float('Cheques en cartera', compute='_compute_cheques_en_cartera')
+    saldo_cta_cte = fields.Float('Saldo Cuenta Corriente')
+    cheques_en_cartera = fields.Float('Cheques en cartera')
 
     type_operation = fields.Selection([('compra', 'Compra'), ('venta', 'Venta')], default='compra', string='Tipo de operacion', readonly=True)
     cheques_venta_ids = fields.Many2many('account.check', string='Cheques', copy=False, states={'draft': [('readonly', '=', False)]})
     account_id = fields.Many2one('account.account', 'Cuenta')
     property_account_receivable_id = fields.Integer('Default debit id', compute='_compute_receivable')
     property_account_payable_id = fields.Integer('Default Credit id', compute='_compute_payable')
+    partner_type = fields.Selection([('customer', 'Cliente'), ('supplier', 'Proveedor')], string='Tipo de partner', compute='_compute_partner_type', readonly=True)
 
     @api.model
     def create(self, values):
         cr = self.env.cr
         uid = self.env.uid
-        payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
-        payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'customer')])[0]
+        context = dict(self._context or {})
+        type_operation = context.get('default_type_operation')
         currency_id = self.env.user.company_id.currency_id.id
 
-        if self.type_operation == 'compra':
+        if type_operation == 'compra':
+            payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
+            payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'customer')])[0]
             apg_values = {
                 'payment_date': values['fecha'],
                 'company_id': 1,
                 'partner_id': values['partner_id'],
                 'currency_id': currency_id,
                 'receiptbook_id': payment_group_receiptbook_id,
-                'partner_type': 'customer',
+                #'partner_type': 'customer',
                 'account_internal_type': 'receivable',
             }
             new_payment_group_id = self.env['account.payment.group'].create(apg_values)
@@ -371,10 +376,18 @@ class Liquidacion(models.Model):
         active_model = context.get('active_model')
         active_ids = context.get('active_ids')
         active_id = context.get('active_id')
+        type_operation = context.get('default_type_operation')
 
+        configuracion_id = self.env['liquidacion.config'].browse(1)
+        journal_cartera_id = None
+        journal_compra_id = None
+        if len(configuracion_id.journal_cartera_id) > 0:
+            journal_cartera_id = configuracion_id.journal_cartera_id.id
+        if len(configuracion_id.journal_compra_id) > 0:
+            journal_compra_id = configuracion_id.journal_compra_id.id
         cr = self.env.cr
         uid = self.env.uid
-        if self.type_operation == 'compra':
+        if type_operation == 'compra':
             payment_method_obj = self.pool.get('account.payment.method')
             payment_method_id = payment_method_obj.search(cr, uid, [('code', '=', 'received_third_check')])[0]
 
@@ -389,6 +402,9 @@ class Liquidacion(models.Model):
                 'receiptbook_id': payment_group_receiptbook_id,
                 'payment_method_id': payment_method_id,
                 'currency_id': currency_id,
+                'journal_id': journal_cartera_id,
+                'journal_invoice_id': journal_compra_id,
+                'journal_invoice_use_doc_id': None,
             })
         return rec
 
@@ -403,6 +419,15 @@ class Liquidacion(models.Model):
         self.property_account_payable_id = self.partner_id.property_account_payable_id.id
 
     @api.one
+    def _compute_partner_type(self):
+        if len(self.account_id) > 0:
+            if self.account_id.id == self.property_account_receivable_id:
+                self.partner_type = 'customer'
+            elif self.account_id.id == self.property_account_payable_id:
+                self.partner_type = 'supplier'
+
+    # Obsoleto
+    @api.one
     def _update_debt(self):
         for move_line_id in self.invoice_id.move_id.line_ids:
             if move_line_id.debit > 0:
@@ -413,6 +438,7 @@ class Liquidacion(models.Model):
                 if move_line_id.credit > 0:
                     self.debt_move_line_ids = [move_line_id.id]
 
+    # Obsoleto
     @api.one
     def _debt_not_reconcilie(self):
         ret = []
@@ -427,14 +453,6 @@ class Liquidacion(models.Model):
         for payment in self.payment_ids:
             bruto += payment.amount
         return bruto
-
-    @api.one
-    def _compute_saldo(self):
-        #self.ensure_one()
-        saldo = 0
-        for line_id in self.debt_move_line_ids:
-            saldo += line_id.amount_residual
-        self.saldo = abs(saldo)
 
     def get_gasto(self):
         gasto = 0
@@ -460,6 +478,19 @@ class Liquidacion(models.Model):
             neto += payment.check_monto_neto
         return neto
 
+    def get_cobrado(self):
+        neto = 0
+        for payment_group_id in self.payment_group_ids:
+            for payment_id in payment_group_id.payment_ids:
+                neto += abs(payment_id.amount)
+        return neto
+
+    @api.one
+    def _compute_saldo(self):
+        saldo = 0
+        self.saldo = self.get_neto()-self.get_cobrado()
+
+
     @api.onchange('journal_id')
     def _set_journal_id(self):
         for payment in self.payment_ids:
@@ -472,22 +503,42 @@ class Liquidacion(models.Model):
         for payment in self.payment_ids:
             payment.check_vat_tax_id = self.vat_tax_id.id
 
+
     @api.one
-    @api.onchange('partner_id')
+    @api.onchange('account_id')
+    def _onchange_account(self):
+        print "Onchange account //////////"
+        self._compute_saldo_cta_cte()
+        self._compute_partner_type()
+
+
+    @api.one
     def _compute_saldo_cta_cte(self):
+        print "_compute_saldo_cta_cte *****************"
         cr = self.env.cr
         uid = self.env.uid
         line_obj = self.pool.get('account.move.line')
-        line_ids = line_obj.search(cr, uid, [
-            ('partner_id', '=', self.partner_id.id),
-            ('account_id', '=', self.partner_id.property_account_receivable_id.id)
-            ])
-        for _id in line_ids:
-            line_id = line_obj.browse(cr, uid, _id)
-            self.saldo_cta_cte +=line_id.amount_residual
+        if len(self.account_id) > 1:
+            line_ids = line_obj.search(cr, uid, [
+                ('partner_id', '=', self.partner_id.id),
+                ('account_id', '=', self.account_id.id)
+                ])
+            for _id in line_ids:
+                line_id = line_obj.browse(cr, uid, _id)
+                self.saldo_cta_cte += line_id.amount_residual
+        else:
+            self.saldo_cta_cte = 0
 
     @api.one
     @api.onchange('partner_id')
+    def _onchange_partner(self):
+        if self.type_operation == 'compra':
+            self.account_id = self.property_account_receivable_id
+        elif self.type_operation == 'venta':
+            self.account_id = self.property_account_payable_id        
+        self._compute_cheques_en_cartera()
+
+    @api.one
     def _compute_cheques_en_cartera(self):
         cr = self.env.cr
         uid = self.env.uid
@@ -502,13 +553,14 @@ class Liquidacion(models.Model):
 
     @api.one
     def confirmar(self):
-        if len(self.payment_ids) == 0:
-            raise UserError("No puede confirmar una liquidacion sin cheques.")
-        else:
-            self.state = 'confirmada'
-            self.confirmar_payments()
-            self.facturar()
-            return True
+        if self.type_operation == 'compra':
+            if len(self.payment_ids) == 0:
+                raise UserError("No puede confirmar una liquidacion sin cheques.")
+            else:
+                self.state = 'confirmada'
+                self.confirmar_payments()
+                self.facturar()
+                return True
 
     @api.multi
     def ver_factura(self):
@@ -527,11 +579,13 @@ class Liquidacion(models.Model):
             payment.check_owner_name = payment.check_firmante_id.name
             payment.check_owner_vat = payment.check_firmante_id.cuit
             payment.check_type = 'third_check'
+            payment.partner_type = self.partner_type
             if i == len(self.payment_ids):
                 payment.description_financiera = "Liquidacion #" + str(self.id).zfill(8) + " - Cheques - " + str(payment.check_number)
             elif payment.check_number > 0:
                 payment.description_financiera = ' ' + str(payment.check_number)
             i += 1
+        self.payment_group_id.partner_type = self.partner_type
         self.payment_group_id.post()
 
     @api.one
@@ -556,10 +610,75 @@ class Liquidacion(models.Model):
                 pass
         return True
 
-
+    # Metodo Obsoleto - Reemplazado por wizard
     def pagar(self, cr, uid, ids, context=None):
         self.write(cr, uid, ids, {'state':'cotizacion'}, context=None)
         return True
+
+    @api.multi
+    def wizard_payment(self):
+        # configuracion_id = self.env['liquidacion.config'].browse(1)
+        # default_journal_id = None
+        # if len(configuracion_id) > 0:
+        #     default_journal_id = configuracion_id.journal_id
+        params = {
+            'liquidacion_id': self.id,
+            'amount': self.saldo,
+        }
+        if self.type_operation == 'compra':
+            name = "Compra de cheques - Pago"
+        else:
+            name = "Venta de cheques - Cobro"
+        view_id = self.env['liquidacion.payment.wizard']
+        new = view_id.create(params)
+        return {
+            'type': 'ir.actions.act_window',
+            'name': name,
+            'res_model': 'liquidacion.payment.wizard',
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_id'    : new.id,
+            'view_id': self.env.ref('financiera_cheques.liquidacion_payment_wizard', False).id,
+            'target': 'new',
+        }
+
+    @api.one
+    def pagar_liquidacion(self, date, amount, journal_id):
+        currency_id = self.env.user.company_id.currency_id.id
+        cr = self.env.cr
+        uid = self.env.uid
+
+        #Pago al cliente
+        payment_method_obj = self.pool.get('account.payment.method')
+        payment_method_id = payment_method_obj.search(cr, uid, [('code', '=', 'manual'), ('payment_type', '=', 'outbound')])[0]
+        ap_values = {
+            'payment_type': 'outbound',
+            'partner_type': self.partner_type,
+            'partner_id': self.partner_id.id,
+            'amount': amount,
+            'payment_date': date,
+            'journal_id': journal_id.id,
+            'payment_method_code': 'manual',
+            'currency_id': currency_id,
+            'payment_method_id': payment_method_id,
+            'description_financiera': "Liquidacion #" + str(self.id).zfill(8) + " - Pago al cliente",
+        }
+        payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
+        payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'customer')])[0]
+        apg_values = {
+            'payment_date': date,
+            'company_id': 1,
+            'partner_id': self.partner_id.id,
+            'currency_id': currency_id,
+            'payment_ids': [(0,0,ap_values)],
+            'receiptbook_id': payment_group_receiptbook_id,
+            'partner_type': self.partner_type,
+            'account_internal_type': 'payable',
+        }
+        new_payment_group_id = self.env['account.payment.group'].create(apg_values)
+        new_payment_group_id.post()
+        self.payment_group_ids = [new_payment_group_id.id]
+
 
     @api.one
     def facturar(self):
@@ -596,7 +715,7 @@ class Liquidacion(models.Model):
             account_invoice_customer0 = {
                 # 'name': "Liquidacion #" + str(self.id).zfill(8) + " - Intereses",
                 'description_financiera': "Liquidacion #" + str(self.id).zfill(6) + " - Intereses",
-                'account_id': self.partner_id.property_account_receivable_id.id,
+                'account_id': self.account_id.id,
                 'partner_id': self.partner_id.id,
                 'journal_id': journal_id.id,
                 'currency_id': self.currency_id.id,
@@ -614,27 +733,38 @@ class Liquidacion(models.Model):
             raise ValidationError("Falta Diario de ventas.")
         return True
 
-    @api.multi
-    def pagar_liquidacion(self):
-        if self.saldo <= 0:
-            raise UserError("El saldo de la liquidacion debe ser mayor a cero.")
-        else:
-            cr = self.env.cr
-            uid = self.env.uid
-            view_ref = self.pool.get('ir.model.data').get_object_reference(cr, uid, 'financiera_cheques', 'pagar_liquidacion_view')
-            view_id = view_ref and view_ref[1] or False,
+    # Metodo Obsoleto - Reemplazado por wizard
+    # @api.multi
+    # def pagar_liquidacion(self):
+    #     if self.saldo <= 0:
+    #         raise UserError("El saldo de la liquidacion debe ser mayor a cero.")
+    #     else:
+    #         cr = self.env.cr
+    #         uid = self.env.uid
+    #         view_ref = self.pool.get('ir.model.data').get_object_reference(cr, uid, 'financiera_cheques', 'pagar_liquidacion_view')
+    #         view_id = view_ref and view_ref[1] or False,
 
-            return {
-                'type': 'ir.actions.act_window',
-                'name': 'Registrar Pago Liquidacion',
-                'view_mode': 'form',
-                'view_type': 'form',
-                'view_id': view_id,
-                'res_model': 'liquidacion.pago',
-                'nodestroy': True,
-                'target': 'new',
-                #'search_view_id': sale_order_tree,
-            }
+    #         return {
+    #             'type': 'ir.actions.act_window',
+    #             'name': 'Registrar Pago Liquidacion',
+    #             'view_mode': 'form',
+    #             'view_type': 'form',
+    #             'view_id': view_id,
+    #             'res_model': 'liquidacion.pago',
+    #             'nodestroy': True,
+    #             'target': 'new',
+    #             #'search_view_id': sale_order_tree,
+    #         }
+
+class LiquidacionConfig(models.Model):
+    _name = 'liquidacion.config'
+
+    name = fields.Char('Nombre', defualt='Configuracion general', readonly=True, required=True)
+    journal_compra_id = fields.Many2one('account.journal', 'Diario de compra')
+    journal_venta_id = fields.Many2one('account.journal', 'Diario de venta')
+    journal_cartera_id = fields.Many2one('account.journal', 'Diario de cheques')
+    automatic_validate = fields.Boolean('Validacion automatica de facturas', default=True)
+
 
 class ExtendsPaymentGroup(models.Model):
     _name = 'account.payment.group'

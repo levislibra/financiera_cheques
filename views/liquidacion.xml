@@ -165,7 +165,8 @@
                     <button name="facturar" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', '!=', 'confirmada')]}" class="oe_highlight" string="Facturar" type="object" />
                     <button name="ver_factura" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', '!=', 'facturada')]}" class="oe_highlight" string="Ver Factura" type="object" />
 
-                    <button name="pagar_liquidacion" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', '!=', 'facturada')]}" class="oe_highlight"  string="Pagar" type="object" />
+                    <button name="wizard_payment" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', '!=', 'facturada')]}" class="oe_highlight"  string="Pagar" type="object" />
+                    <button name="wizard_payment" attrs="{'invisible': ['|', ('type_operation', '!=', 'venta'), ('state', '!=', 'facturada')]}" class="oe_highlight"  string="Cobrar" type="object" />
                     <button name="cancelar" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', 'not in', ['confirmada', 'facturada'])]}" string="Cancelar" type="object" />
                     <field name="state" widget="statusbar"/>
                 </header>
@@ -176,22 +177,26 @@
                     <group>
                       <group>
                         <label for="id" string="Liquidacion Nro"/><h3><field name="id"/></h3>
-                        <field name="type_operation" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" readonly="1"/>
                         <field name="fecha" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" context="{'fecha': fecha}"/>
                         <label for="partner_id"/><h2><field name="partner_id" attrs="{'readonly': [('state', '!=', 'cotizacion')]}"/></h2>
-                        <field name="analytic_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': True}"/>
-                        <field name="journal_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
+                        <field name="property_account_receivable_id" invisible="1"/>
+                        <field name="property_account_payable_id" invisible="1"/>
+                        <field name="account_id" options="{'no_quick_create': True,'no_create_edit': True}" domain="[('id', 'in', [property_account_receivable_id, property_account_payable_id])]" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
                         <field name="factura_electronica" attrs="{'readonly': [('state', 'not in', ['cotizacion'])]}"/>
                         <field name="vat_tax_id" attrs="{'readonly': [('state', 'not in', ['cotizacion'])], 'invisible': [('factura_electronica', '=', False)], 'required': [('factura_electronica', '=', True)]}"/>
                         <field name="journal_invoice_id" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])],'required': [('factura_electronica', '=', False)], 'invisible': [('factura_electronica', '!=', False)]}" />
                         <field name="journal_invoice_use_doc_id" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])],'required': [('factura_electronica', '=', True)], 'invisible': [('factura_electronica', '=', False)]}" />
                         <field name="saldo" widget="monetary"/>
                       </group>
-                      <group string="Informacion del cliente">
+                      <group>
+                        <field name="type_operation" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" readonly="1"/>
+                        <field name="partner_type" invisible="1"/>
+                        <field name="analytic_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': True}"/>
+                        <field name="journal_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
                         <field name="tasa_fija"/>
                         <field name="tasa_mensual"/>
-                        <field name="saldo_cta_cte" widget="monetary"/>
-                        <field name="cheques_en_cartera" widget="monetary"/>
+                        <field name="saldo_cta_cte" readonly="1" widget="monetary"/>
+                        <field name="cheques_en_cartera" readonly="1" widget="monetary"/>
                       </group>
                     </group>
                     <notebook>
@@ -241,17 +246,17 @@
                         <page string="Pagos al cliente">
                             <field name="payment_group_ids"/>
                         </page>
-                        <page string="Deuda contable">
+                        <!-- <page string="Deuda contable">
                             <field name="debt_move_line_ids"/>
-                        </page>
+                        </page> -->
                         <page string="Otra Informacion">
                           <group>
-                            <field name="receiptbook_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
-                            <field name="payment_method_id" attrs="{'required': True}"/>
+                            <field name="receiptbook_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': [('type_operation', '=', 'compra')], 'invisible': [('type_operation', '!=', 'compra')]}"/>
+                            <field name="payment_method_id" attrs="{'required': [('type_operation', '=', 'compra')], 'invisible': [('type_operation', '!=', 'compra')]}"/>
                             <field name="currency_id" attrs="{'required': True}"/>
                             <field name="move_id"/>
                             <field name="invoice_id"/>
-                            <field name="payment_group_id"/>
+                            <field name="payment_group_id" attrs="{'invisible': [('type_operation', '!=', 'compra')]}"/>
                            </group>
                         </page>
                     </notebook>
@@ -278,6 +283,45 @@
         <field name="view_id" ref="view_tree_liquidacion"/>
     </record>
 
+    <!-- Fixed Term Configuracion -->
+
+    <record model="ir.ui.view" id="liquidacion_config_tree">
+      <field name="name">liquidacion.config</field>
+      <field name="model">liquidacion.config</field>
+      <field name="arch" type="xml">
+        <tree create="false" delete="false">
+          <field name="name"/>
+        </tree>
+      </field>
+    </record>
+
+    <record id="liquidacion_config_form" model="ir.ui.view">
+        <field name="name">liquidacion.config.form</field>
+        <field name="model">liquidacion.config</field>
+        <field name="arch" type="xml">
+            <form string="Configuracion" create="false" delete="false">
+                <sheet>
+                    <group>
+                      <field name="name"/>
+                      <field name="journal_compra_id" domain="[('type', '=', 'sale')]" required="1"/>
+                      <field name="journal_venta_id" domain="[('type', '=', 'purchase')]" required="1"/>
+                      <field name="journal_cartera_id" domain="[('type', 'in', ['cash', 'bank'])]" required="1"/>
+                      <field name="automatic_validate"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="liquidacion_config_action">
+      <field name="name">Configuracion</field>
+      <field name="res_model">liquidacion.config</field>
+      <field name="view_mode">tree,form</field>
+      <field name="view_id" ref="liquidacion_config_tree"/>
+    </record>
+
+
+    <!-- VIew Obsoleta -->
     <!-- View Pagar Liquidacion -->
 
     <record id="pagar_liquidacion_view" model="ir.ui.view">
@@ -393,6 +437,8 @@
 
     <menuitem id="smenu_informacion" name="Informacion" parent="menu_financiera"  sequence="40" />
 
+    <menuitem id="smenu_config" name="Configuracion" parent="menu_financiera"  sequence="50" />
+
 
     
     <!-- Actions -->
@@ -412,6 +458,7 @@
 
     <menuitem id="smenu_firmante_action" name="Firmantes" parent="smenu_informacion" action="firmante_action"  sequence="1" />
 
+    <menuitem id="smenu_config_action" name="Configuracion" parent="smenu_config" action="liquidacion_config_action"  sequence="1" />
 
   </data>
 </openerp>
