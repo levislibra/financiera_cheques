@@ -201,12 +201,27 @@
                     </group>
                     <notebook>
                         <page string="Cheques">
-                            <field name="cheques_venta_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': [('type_operation', '=', 'compra')]}" options="{'no_create': True}" domain="[('state', '=', 'holding'), ('type', '=', 'third_check')]" widget="many2many">
-                                <tree edit="false">
-                                    <field name="name"/>
-                                    <field name="payment_date"/>
-                                    <field name="amount" sum="Total"/>
+                            <group>
+                                <!-- <button name="actualizar" attrs="{'invisible': [('state', '!=', 'cotizacion')]}" class="oe_highlight" string="Actualizar" type="object" /> -->
+                                <!-- <button name="wizard_buscar_cheques" attrs="{'invisible': [('state', '!=', 'cotizacion')]}" class="oe_highlight" string="Cargar cheques" type="object" /> -->
+                            </group>
+                            <!-- widget="many2many" -->
+                            <field name="cheques_venta_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': [('type_operation', '=', 'compra')]}" domain="[('state', '=', 'holding'), ('type', '=', 'third_check')]" widget="many2many">
+                                <tree create="false" editable="1">
                                     <field name="state" invisible="1"/>
+                                    <field name="name"/>
+                                    <field name="number"/>
+                                    <field name="bank_id"/>
+                                    <field name="amount" sum="Total"/>
+                                    <field name="payment_date"/>
+                                    <field name="check_fecha_acreditacion_venta"/>
+                                    <field name="check_dias_venta" readonly="1"/>
+                                    <field name="check_tasa_fija_venta" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}" widget="char"/>
+                                    <field name="check_monto_fijo_venta" sum="Total" readonly="1"/>
+                                    <field name="check_tasa_mensual_venta" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}" widget="char"/>
+                                    <field name="check_monto_mensual_venta" sum="Total" readonly="1"/>
+                                    <field name="check_monto_costo_venta" sum="Total costo"/>
+                                    <field name="check_monto_neto_venta" sum="Total" readonly="1"/>
                                 </tree>
                             </field>
                             <!-- ('journal_id', '=', journal_venta_id),  -->
@@ -222,15 +237,15 @@
                                     <field name="check_type" invisible="1"/>
                                     <field name="state" invisible="1"/>
                                     <!--<field name="check_scanner_id"/>-->
-                                    <field name="check_firmante_id" required="1"/>
+                                    <field name="check_firmante_id" required="0"/>
                                     <!--<field name="check_number_char" required="1"/>-->
                                     <field name="check_number" required="1"/>
                                     <field name="check_bank_id" options="{'no_quick_create':True,'no_create_edit':True}" required="1"/>
                                     <!--<field name="check_amount_char" widget="char" sum="Total"/>-->
-                                    <field name="amount" widget="char" invisible="0" sum="Total"/>
-                                    <field name="check_issue_date" required="1"/>
-                                    <field name="check_payment_date" required="1"/>
-                                    <field name="check_fecha_acreditacion" required="1"/>
+                                    <field name="amount" widget="char" required="0" invisible="0" sum="Total"/>
+                                    <field name="check_issue_date" required="0"/>
+                                    <field name="check_payment_date" required="0"/>
+                                    <field name="check_fecha_acreditacion" required="0"/>
                                     <field name="check_dias" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
                                     <field name="check_tasa_fija" widget="char"/>
                                     <field name="check_monto_fijo" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>

@@ -24,3 +24,13 @@ class FinancieraPaymentWizard(models.TransientModel):
             self.liquidacion_id.pagar_liquidacion(self.date, self.amount,self.journal_payment_out_id)
         elif self.type_operation == 'venta':
             pass
+
+class FinancieraSearchCheckWizard(models.TransientModel):
+    _name = 'liquidacion.search.check.wizard'
+
+    @api.one
+    def confirm_select_checks(self):
+        context = dict(self._context or {})
+        active_ids = context.get('active_ids')
+        print "active idsssssssssssss"
+        print active_ids        
