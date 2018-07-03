@@ -25,12 +25,12 @@ class FinancieraPaymentWizard(models.TransientModel):
         elif self.type_operation == 'venta':
             pass
 
-class FinancieraSearchCheckWizard(models.TransientModel):
-    _name = 'liquidacion.search.check.wizard'
+class FinancieraChequeWizard(models.TransientModel):
+    _name = 'liquidacion.cheque.wizard'
+
+    cheque_id = fields.Many2one('account.check', "Cheque")
 
     @api.one
-    def confirm_select_checks(self):
-        context = dict(self._context or {})
-        active_ids = context.get('active_ids')
-        print "active idsssssssssssss"
-        print active_ids        
+    def confirm_eliminar_seleccion(self):
+        self.cheque_id.eliminar_seleccion()
+        return True

@@ -161,7 +161,9 @@
         <field name="arch" type="xml">
             <form string="Liquidacion">
                 <header>
-                    <button name="confirmar" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', '!=', 'cotizacion')]}" class="oe_highlight" string="Confirmar" type="object" />
+                    <button name="confirmar" class="oe_highlight" string="Confirmar" type="object" />
+                    <button name="borrador" class="oe_highlight" string="Enviar a borrador" type="object" />
+                    <!-- attrs="{'invisible': [('state', '!=', 'cotizacion')]}" -->
                     <button name="facturar" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', '!=', 'confirmada')]}" class="oe_highlight" string="Facturar" type="object" />
                     <button name="ver_factura" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', '!=', 'facturada')]}" class="oe_highlight" string="Ver Factura" type="object" />
 
@@ -182,9 +184,10 @@
                         <field name="property_account_receivable_id" invisible="1"/>
                         <field name="property_account_payable_id" invisible="1"/>
                         <field name="account_id" options="{'no_quick_create': True,'no_create_edit': True}" domain="[('id', 'in', [property_account_receivable_id, property_account_payable_id])]" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
-                        <field name="factura_electronica" attrs="{'readonly': [('state', 'not in', ['cotizacion'])]}"/>
-                        <field name="vat_tax_id" attrs="{'readonly': [('state', 'not in', ['cotizacion'])], 'invisible': [('factura_electronica', '=', False)], 'required': [('factura_electronica', '=', True)]}"/>
-                        <field name="journal_invoice_id" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])],'required': [('factura_electronica', '=', False)], 'invisible': [('factura_electronica', '!=', False)]}" />
+                        <field name="factura_electronica" attrs="{'readonly': [('state', 'not in', ['cotizacion'])], 'invisible': [('type_operation', '!=', 'compra')]}"/>
+                        <field name="vat_tax_id" attrs="{'readonly': [('state', 'not in', ['cotizacion'])], 'invisible': ['|', ('factura_electronica', '=', False), ('type_operation', '!=', 'compra')], 'required': [('factura_electronica', '=', True)]}"/>
+                        <field name="journal_invoice_id" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])],'required': [('factura_electronica', '=', False)], 'invisible': ['|', ('factura_electronica', '!=', False), ('type_operation', '!=', 'compra')]}" />
+                        <field name="journal_invoice_id_venta" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])],'required': [('type_operation', '=', 'venta')], 'invisible': [('type_operation', '=', 'compra')]}" />
                         <field name="journal_invoice_use_doc_id" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])],'required': [('factura_electronica', '=', True)], 'invisible': [('factura_electronica', '=', False)]}" />
                         <field name="saldo" widget="monetary"/>
                       </group>
@@ -202,12 +205,12 @@
                     <notebook>
                         <page string="Cheques">
                             <group>
-                                <!-- <button name="actualizar" attrs="{'invisible': [('state', '!=', 'cotizacion')]}" class="oe_highlight" string="Actualizar" type="object" /> -->
+                                <button name="actualizar_por_defecto" attrs="{'invisible': ['|', ('state', '!=', 'cotizacion'), ('type_operation', '!=', 'venta')]}" class="oe_highlight" string="Actualizar" type="object" />
                                 <!-- <button name="wizard_buscar_cheques" attrs="{'invisible': [('state', '!=', 'cotizacion')]}" class="oe_highlight" string="Cargar cheques" type="object" /> -->
                             </group>
-                            <!-- widget="many2many" -->
+                            <!-- widget="many2many"  context="{'active_model': 'liquidacion_venta'}" -->
                             <field name="cheques_venta_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': [('type_operation', '=', 'compra')]}" domain="[('state', '=', 'holding'), ('type', '=', 'third_check')]" widget="many2many">
-                                <tree create="false" editable="1">
+                                <tree delete="false" editable="1">
                                     <field name="state" invisible="1"/>
                                     <field name="name"/>
                                     <field name="number"/>
@@ -222,10 +225,11 @@
                                     <field name="check_monto_mensual_venta" sum="Total" readonly="1"/>
                                     <field name="check_monto_costo_venta" sum="Total costo"/>
                                     <field name="check_monto_neto_venta" sum="Total" readonly="1"/>
+                                    <button name="wizard_eliminar_seleccion" icon="fa-trash" type="object"/>
                                 </tree>
                             </field>
                             <!-- ('journal_id', '=', journal_venta_id),  -->
-                            <field name="payment_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': [('type_operation', '=', 'venta')]}" context="{'active_model': 'liquidacion', 'action': 'cheque_nuevo', 'fecha': fecha, 'partner_id': partner_id, 'journal_id': journal_id, 'receiptbook_id': receiptbook_id, 'payment_method_id': payment_method_id, 'currency_id': currency_id, 'vat_tax_id': vat_tax_id, 'active_id': id}">
+                            <field name="payment_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': [('type_operation', '=', 'venta')]}" context="{'active_model': 'liquidacion', 'action': 'cheque_nuevo', 'fecha': fecha, 'partner_id': partner_id, 'journal_id': journal_id, 'receiptbook_id': receiptbook_id, 'payment_method_id': payment_method_id, 'currency_id': currency_id, 'vat_tax_id': vat_tax_id, 'active_id': id}" >
                                 <tree string="Cheques" editable="bottom" >
                                     <field name="partner_type" invisible="1"/>
                                     <field name="currency_id" invisible="1"/>
@@ -271,7 +275,7 @@
                             <field name="currency_id" attrs="{'required': True}"/>
                             <field name="move_id"/>
                             <field name="invoice_id"/>
-                            <field name="payment_group_id" attrs="{'invisible': [('type_operation', '!=', 'compra')]}"/>
+                            <field name="payment_group_id"/>
                            </group>
                         </page>
                     </notebook>
@@ -371,9 +375,13 @@
       <field name="arch" type="xml">
         <xpath expr="//page[3]" position='before'>
           <page string='Financiera'>
-            <group string="Tasas por defecto">
+            <group string="Tasas compra de cheques">
               <field name="tasa_fija"/>
               <field name="tasa_mensual"/>
+            </group>
+            <group string="Tasas venta de cheques">
+              <field name="tasa_fija_venta"/>
+              <field name="tasa_mensual_venta"/>
             </group>
           </page>
         </xpath>

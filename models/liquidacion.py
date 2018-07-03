@@ -202,54 +202,6 @@ class AccountPayment(models.Model):
     def _check_fecha_acreditacion(self):
         self.check_fecha_acreditacion = self.check_payment_date
 
-class ExtendsAccountCheck(models.Model):
-    _inherit = 'account.check'
-    _name = 'account.check'
-
-    # Campos para el calculo de venta de cheques
-    check_liquidacion_id_venta = fields.Many2one('liquidacion', 'Liquidaicon venta')
-    check_fecha_acreditacion_venta = fields.Date('Acreditacion')
-    check_dias_venta = fields.Integer(string='Dias', compute='_check_dias_venta')
-    check_tasa_fija_venta = fields.Float('Impuesto')
-    check_monto_fijo_venta = fields.Monetary(string='Monto', compute='_check_monto_fijo_venta')
-    check_tasa_mensual_venta = fields.Float('Interes')
-    check_monto_mensual_venta = fields.Monetary(string='Monto', compute='_check_monto_mensual_venta')
-    check_monto_costo_venta = fields.Monetary("Costo", compute='_compute_costo_venta')
-    check_monto_neto_venta = fields.Monetary(string='Neto', compute='_check_monto_neto_venta')
-
-
-    @api.one
-    @api.onchange('amount', 'check_monto_fijo_venta', 'check_monto_mensual_venta')
-    def _compute_costo_venta(self):
-        self.check_monto_costo_venta = round(self.check_monto_fijo_venta + self.check_monto_mensual_venta, 2)
-
-    @api.one
-    @api.onchange('check_liquidacion_id_venta.fecha', 'check_fecha_acreditacion_venta')
-    def _check_dias_venta(self):
-        if len(self.check_liquidacion_id_venta) > 0 and self.check_liquidacion_id_venta.fecha and self.check_fecha_acreditacion_venta:
-            fecha_inicial = datetime.strptime(str(self.check_liquidacion_id_venta.fecha), "%Y-%m-%d")
-            fecha_final = datetime.strptime(str(self.check_fecha_acreditacion_venta), "%Y-%m-%d")
-            diferencia = fecha_final - fecha_inicial
-            if diferencia.days > 0:
-                self.check_dias_venta = diferencia.days
-            else:
-                self.check_dias_venta = 0
-
-    @api.one
-    @api.onchange('amount', 'check_tasa_fija_venta')
-    def _check_monto_fijo_venta(self):
-        self.check_monto_fijo_venta = round(self.amount * (self.check_tasa_fija_venta / 100), 2)
-
-    @api.one
-    @api.onchange('amount', 'check_tasa_mensual_venta', 'check_dias_venta')
-    def _check_monto_mensual_venta(self):
-        self.check_monto_mensual_venta = round(self.check_dias_venta * ((self.check_tasa_mensual_venta / 30) / 100) * self.amount,2)
-
-
-    @api.one
-    @api.onchange('amount', 'check_monto_fijo_venta', 'check_monto_mensual_venta')
-    def _check_monto_neto_venta(self):
-        self.check_monto_neto_venta = round(self.amount - self.check_monto_fijo_venta - self.check_monto_mensual_venta, 2)
 
 # Clase Obsoleta - Usamos Wizards
 class LiquidacionPagar(models.Model):
@@ -332,6 +284,7 @@ class Liquidacion(models.Model):
     journal_id = fields.Many2one('account.journal', 'Diario de cheques', domain="[('type', 'in', ('bank', 'cash')), ('inbound_payment_method_ids.code', 'in', ['received_third_check'])]")
     journal_invoice_id = fields.Many2one('account.journal', 'Diario de factura', domain="[('use_documents', '=', False), ('type', '=', 'sale')]")
     journal_invoice_use_doc_id = fields.Many2one('account.journal', 'Diario de factura', domain="[('use_documents', '=', True), ('type', '=', 'sale')]")
+    journal_invoice_id_venta = fields.Many2one('account.journal', 'Diario de factura', domain="[('type', '=', 'purchase')]")
     analytic_id = fields.Many2one('account.analytic.account', 'Cuenta analítica')
     move_id = fields.Many2one('account.move', 'Asiento', readonly=True)
     invoice_id = fields.Many2one('account.invoice', 'Factura', readonly=True)
@@ -351,8 +304,8 @@ class Liquidacion(models.Model):
     debt_move_line_ids = fields.One2many('account.move.line', 'liquidacion_id', 'Deuda a pagar', compute='_update_debt', default=None)
     saldo = fields.Float('Saldo', compute='_compute_saldo')
 
-    tasa_fija = fields.Float('Tasa fija', related='partner_id.tasa_fija', readonly=True)
-    tasa_mensual = fields.Float('Tasa mensual', related='partner_id.tasa_mensual', readonly=True)
+    tasa_fija = fields.Float('Tasa fija', compute='compute_tasa_fija')
+    tasa_mensual = fields.Float('Tasa mensual', compute='compute_tasa_mensual')
     saldo_cta_cte = fields.Float('Saldo Cuenta Corriente', compute='_compute_saldo_cta_cte')
     cheques_en_cartera = fields.Float('Cheques en cartera', compute='_compute_cheques_en_cartera')
 
@@ -389,6 +342,22 @@ class Liquidacion(models.Model):
 
         rec = super(Liquidacion, self).create(values)
         return rec
+
+    @api.one
+    @api.onchange('partner_id')
+    def compute_tasa_fija(self):
+        if self.type_operation == 'compra':
+            self.tasa_fija = self.partner_id.tasa_fija
+        elif self.type_operation == 'venta':
+            self.tasa_fija = self.partner_id.tasa_fija_venta
+
+    @api.one
+    @api.onchange('partner_id')
+    def compute_tasa_mensual(self):
+        if self.type_operation == 'compra':
+            self.tasa_mensual = self.partner_id.tasa_mensual
+        elif self.type_operation == 'venta':
+            self.tasa_mensual = self.partner_id.tasa_mensual_venta
 
     @api.model
     def default_get(self, fields):
@@ -476,20 +445,32 @@ class Liquidacion(models.Model):
 
     def get_bruto(self):
         bruto = 0
-        for payment in self.payment_ids:
-            bruto += payment.amount
+        if self.type_operation == 'compra':
+            for payment in self.payment_ids:
+                bruto += payment.amount
+        elif self.type_operation == 'venta':
+            for cheque_id in self.cheques_venta_ids:
+                bruto += cheque_id.amount
         return bruto
 
     def get_gasto(self):
         gasto = 0
-        for payment in self.payment_ids:
-            gasto += payment.check_monto_fijo
+        if self.type_operation == 'compra':
+            for payment in self.payment_ids:
+                gasto += payment.check_monto_fijo
+        elif self.type_operation == 'venta':
+            for cheque_id in self.cheques_venta_ids:
+                gasto += cheque_id.check_monto_fijo_venta
         return gasto
 
     def get_interes(self):
         interes = 0
-        for payment in self.payment_ids:
-            interes += payment.check_monto_mensual
+        if self.type_operation == 'compra':
+            for payment in self.payment_ids:
+                interes += payment.check_monto_mensual
+        elif self.type_operation == 'venta':
+            for cheque_id in self.cheques_venta_ids:
+                interes += cheque_id.check_monto_mensual_venta
         return interes
 
     def get_iva(self):
@@ -500,8 +481,12 @@ class Liquidacion(models.Model):
 
     def get_neto(self):
         neto = 0
-        for payment in self.payment_ids:
-            neto += payment.check_monto_neto
+        if self.type_operation == 'compra':
+            for payment in self.payment_ids:
+                neto += payment.check_monto_neto
+        elif self.type_operation == 'venta':
+            for cheque_id in self.cheques_venta_ids:
+                neto += cheque_id.check_monto_neto_venta
         return neto
 
     def get_cobrado(self):
@@ -515,7 +500,6 @@ class Liquidacion(models.Model):
     def _compute_saldo(self):
         saldo = 0
         self.saldo = self.get_neto()-self.get_cobrado()
-
 
     @api.onchange('journal_id')
     def _set_journal_id(self):
@@ -577,14 +561,25 @@ class Liquidacion(models.Model):
             self.cheques_en_cartera += line_id.amount
 
     @api.one
+    def borrador(self):
+        self.state = 'cotizacion'
+
+    @api.one
     def confirmar(self):
         if self.type_operation == 'compra':
             if len(self.payment_ids) == 0:
-                raise UserError("No puede confirmar una liquidacion sin cheques.")
+                raise UserError("No puede confirmar una compra de cheques vacia.")
             else:
                 self.state = 'confirmada'
                 self.confirmar_payments()
                 self.facturar()
+        elif self.type_operation == 'venta':
+            if len(self.cheques_venta_ids) == 0:
+                raise UserError("No puede confirmar una venta de cheques vacia.")
+            else:
+                self.state = 'confirmada'
+                self.confirmar_venta()
+                self.facturar_venta()
                 return True
 
     @api.multi
@@ -613,6 +608,45 @@ class Liquidacion(models.Model):
         self.payment_group_id.partner_type = self.partner_type
         self.payment_group_id.post()
 
+    def confirmar_venta(self):
+        #Cheques al proveedor
+        cr = self.env.cr
+        uid = self.env.uid
+        payment_method_obj = self.pool.get('account.payment.method')
+        payment_method_id = payment_method_obj.search(cr, uid, [('code', '=', 'delivered_third_check'), ('payment_type', '=', 'outbound')])[0]
+        ap_values = {
+            'payment_type_copy': 'outbound',
+            'payment_type': 'outbound',
+            'partner_type': self.partner_type,
+            'partner_id': self.partner_id.id,
+            'payment_date': self.fecha,
+            'journal_id': self.journal_id.id,
+            'payment_method_code': 'delivered_third_check',
+            #'check_ids': self.cheques_venta_ids,
+            'readonly_amount': self.get_bruto(),
+            'amount': self.get_bruto(),
+            'currency_id': self.currency_id.id,
+            'payment_method_id': payment_method_id,
+            'description_financiera': "Venta #" + str(self.id).zfill(8) + " - cheques",
+        }
+
+        payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
+        payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'supplier')])[0]
+        apg_values = {
+            'payment_date': self.fecha,
+            'company_id': 1,
+            'partner_id': self.partner_id.id,
+            'currency_id': self.currency_id.id,
+            'receiptbook_id': payment_group_receiptbook_id,
+            'payment_ids': [(0,0,ap_values)],
+            'partner_type': 'supplier',
+            'account_internal_type': 'payable',
+        }
+        new_payment_group_id = self.env['account.payment.group'].create(apg_values)
+        self.payment_group_id = new_payment_group_id.id
+        self.payment_group_id.payment_ids[0].check_ids = self.cheques_venta_ids
+        self.payment_group_id.post()
+
     @api.one
     def cancelar(self):
         if self.invoice_id.state == 'paid':
@@ -636,33 +670,11 @@ class Liquidacion(models.Model):
         return True
 
     @api.one
-    def actualizar(self):
+    def actualizar_por_defecto(self):
         for check_id in self.cheques_venta_ids:
             check_id.check_fecha_acreditacion_venta = check_id.payment_date
-
-    @api.multi
-    def wizard_buscar_cheques(self):
-        cr = self.env.cr
-        uid = self.env.uid
-        check_obj = self.pool.get('account.check')
-        domain=[('state', '=', 'holding'), ('type', '=', 'third_check')]
-        check_ids = check_obj.search(cr, uid, domain)
-        params = {
-            #'active_ids':
-        }
-        #view_id = self.env['liquidacion.search.check.wizard']
-        #new = view_id.create(params)
-        return {
-            'domain': "[('id', 'in', ["+','.join(map(str, check_ids))+"])]",
-            'type': 'ir.actions.act_window',
-            'name': "Buscar cheques",
-            'res_model': 'account.check',
-            'view_type': 'tree',
-            'view_mode': 'tree',
-            #'res_id'    : new.id,
-            'view_id': self.env.ref('account_check.view_account_check_tree', False).id,
-            'target': 'new',
-        }
+            check_id.check_tasa_fija_venta = self.partner_id.tasa_fija_venta
+            check_id.check_tasa_mensual_venta = self.partner_id.tasa_mensual_venta
 
 
     # Metodo Obsoleto - Reemplazado por wizard
@@ -788,6 +800,53 @@ class Liquidacion(models.Model):
             raise ValidationError("Falta Diario de ventas.")
         return True
 
+    @api.one
+    def facturar_venta(self):
+        journal_id = None
+        vat_tax_id = None
+        invoice_line_tax_ids = None
+
+        journal_id = self.journal_invoice_id_venta
+        if journal_id != False and journal_id != None:
+            # Create invoice line
+            ail = {
+                'name': "Interes por venta de cheques varios",
+                'quantity':1,
+                'price_unit': self.get_interes(),
+                'vat_tax_id': vat_tax_id,
+                'invoice_line_tax_ids': invoice_line_tax_ids,
+                'account_id': journal_id.default_debit_account_id.id,
+            }
+
+            # Create invoice line
+            ail2 = {
+                'name': "Impuesto a los debitos y creditos bancarios a pagar por venta de cheques.",
+                'quantity':1,
+                'price_unit': self.get_gasto(),
+                #'vat_tax_id': vat_tax_id,
+                #'invoice_line_tax_ids': [(6, 0, [vat_tax_id])],
+                'account_id': journal_id.default_debit_account_id.id,
+            }
+            account_invoice_customer0 = {
+                # 'name': "Liquidacion #" + str(self.id).zfill(8) + " - Intereses",
+                'description_financiera': "Venta #" + str(self.id).zfill(8) + " - Intereses e impuestos",
+                'account_id': self.account_id.id,
+                'partner_id': self.partner_id.id,
+                'journal_id': journal_id.id,
+                'currency_id': self.currency_id.id,
+                'company_id': 1,
+                'date': self.fecha,
+                'invoice_line_ids': [(0, 0, ail), (0, 0, ail2)],
+            }
+            new_invoice_id = self.env['account.invoice'].create(account_invoice_customer0)
+            #hacer configuracion de validacion automatica
+            new_invoice_id.signal_workflow('invoice_open')
+            self.invoice_id = new_invoice_id.id
+            self.state = 'facturada'
+        else:
+            raise ValidationError("Falta Diario de Proveedores")
+        return True
+
     # Metodo Obsoleto - Reemplazado por wizard
     # @api.multi
     # def pagar_liquidacion(self):
@@ -849,8 +908,10 @@ class ExtendsPartner(models.Model):
     _name = 'res.partner'
     _inherit = 'res.partner'
 
-    tasa_fija = fields.Float('Tasa de gastos')
-    tasa_mensual = fields.Float('Tasa mensual')
+    tasa_fija = fields.Float('Tasa de impuestos')
+    tasa_mensual = fields.Float('Tasa mensual de descuento')
+    tasa_fija_venta = fields.Float('Tasa de impuestos de venta')
+    tasa_mensual_venta = fields.Float('Tasa mensual de descuento en venta')
 
 class ExtendsAccountAccount(models.Model):
     _name = 'account.account'
@@ -875,6 +936,50 @@ class ExtendsAccountCheck(models.Model):
     fecha_salida = fields.Date('Fecha salida', compute='_compute_fecha_salida', store=True)
     operaciones_count = fields.Integer("Cantidad de operaciones", compute='_compute_operaciones_count')
     company_currency_id = fields.Many2one('res.currency', string="Moneda de la Compania", compute='_compute_currency_id')
+
+    # Campos para el calculo de venta de cheques
+    check_liquidacion_id_venta = fields.Many2one('liquidacion', 'Liquidaicon venta')
+    check_fecha_acreditacion_venta = fields.Date('Acreditacion')
+    check_dias_venta = fields.Integer(string='Dias', compute='_check_dias_venta')
+    check_tasa_fija_venta = fields.Float('Impuesto')
+    check_monto_fijo_venta = fields.Monetary(string='Monto', compute='_check_monto_fijo_venta')
+    check_tasa_mensual_venta = fields.Float('Interes')
+    check_monto_mensual_venta = fields.Monetary(string='Monto', compute='_check_monto_mensual_venta')
+    check_monto_costo_venta = fields.Monetary("Costo", compute='_compute_costo_venta')
+    check_monto_neto_venta = fields.Monetary(string='Neto', compute='_check_monto_neto_venta')
+
+    @api.one
+    @api.onchange('amount', 'check_monto_fijo_venta', 'check_monto_mensual_venta')
+    def _compute_costo_venta(self):
+        self.check_monto_costo_venta = round(self.check_monto_fijo_venta + self.check_monto_mensual_venta, 2)
+
+    @api.one
+    @api.onchange('check_liquidacion_id_venta.fecha', 'check_fecha_acreditacion_venta')
+    def _check_dias_venta(self):
+        if len(self.check_liquidacion_id_venta) > 0 and self.check_liquidacion_id_venta.fecha and self.check_fecha_acreditacion_venta:
+            fecha_inicial = datetime.strptime(str(self.check_liquidacion_id_venta.fecha), "%Y-%m-%d")
+            fecha_final = datetime.strptime(str(self.check_fecha_acreditacion_venta), "%Y-%m-%d")
+            diferencia = fecha_final - fecha_inicial
+            if diferencia.days > 0:
+                self.check_dias_venta = diferencia.days
+            else:
+                self.check_dias_venta = 0
+
+    @api.one
+    @api.onchange('amount', 'check_tasa_fija_venta')
+    def _check_monto_fijo_venta(self):
+        self.check_monto_fijo_venta = round(self.amount * (self.check_tasa_fija_venta / 100), 2)
+
+    @api.one
+    @api.onchange('amount', 'check_tasa_mensual_venta', 'check_dias_venta')
+    def _check_monto_mensual_venta(self):
+        self.check_monto_mensual_venta = round(self.check_dias_venta * ((self.check_tasa_mensual_venta / 30) / 100) * self.amount,2)
+
+
+    @api.one
+    @api.onchange('amount', 'check_monto_fijo_venta', 'check_monto_mensual_venta')
+    def _check_monto_neto_venta(self):
+        self.check_monto_neto_venta = round(self.amount - self.check_monto_fijo_venta - self.check_monto_mensual_venta, 2)
     
     @api.one
     def _compute_currency_id(self):
@@ -900,3 +1005,28 @@ class ExtendsAccountCheck(models.Model):
     # Override function
     def _check_unique(self):
         return True
+
+    @api.multi
+    def wizard_eliminar_seleccion(self):
+        print "Wizards eliminar_seleccion"
+        print self
+        params = {
+            'cheque_id': self.id,
+        }
+        view_id = self.env['liquidacion.cheque.wizard']
+        new = view_id.create(params)
+        return {
+            'type': 'ir.actions.act_window',
+            'name': "Eliminar cheque seleccionado?",
+            'res_model': 'liquidacion.cheque.wizard',
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_id'    : new.id,
+            'view_id': self.env.ref('financiera_cheques.liquidacion_cheque_wizard', False).id,
+            'target': 'new',
+        }
+
+    @api.one
+    def eliminar_seleccion(self):
+        self.check_liquidacion_id_venta = None
+
