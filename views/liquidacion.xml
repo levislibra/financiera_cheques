@@ -162,7 +162,7 @@
             <form string="Liquidacion">
                 <header>
                     <button name="confirmar" class="oe_highlight" string="Confirmar" type="object" />
-                    <button name="borrador" class="oe_highlight" string="Enviar a borrador" type="object" />
+                    <!-- <button name="borrador" class="oe_highlight" string="Enviar a borrador" type="object" /> -->
                     <!-- attrs="{'invisible': [('state', '!=', 'cotizacion')]}" -->
                     <button name="facturar" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', '!=', 'confirmada')]}" class="oe_highlight" string="Facturar" type="object" />
                     <button name="ver_factura" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', '!=', 'facturada')]}" class="oe_highlight" string="Ver Factura" type="object" />
@@ -186,7 +186,7 @@
                         <field name="account_id" options="{'no_quick_create': True,'no_create_edit': True}" domain="[('id', 'in', [property_account_receivable_id, property_account_payable_id])]" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': True}"/>
                         <field name="factura_electronica" attrs="{'readonly': [('state', 'not in', ['cotizacion'])], 'invisible': [('type_operation', '!=', 'compra')]}"/>
                         <field name="vat_tax_id" attrs="{'readonly': [('state', 'not in', ['cotizacion'])], 'invisible': ['|', ('factura_electronica', '=', False), ('type_operation', '!=', 'compra')], 'required': [('factura_electronica', '=', True)]}"/>
-                        <field name="journal_invoice_id" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])],'required': [('factura_electronica', '=', False)], 'invisible': ['|', ('factura_electronica', '!=', False), ('type_operation', '!=', 'compra')]}" />
+                        <field name="journal_invoice_id" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])],'required': [('factura_electronica', '=', False), ('type_operation', '=', 'compra')], 'invisible': ['|', ('factura_electronica', '!=', False), ('type_operation', '!=', 'compra')]}" />
                         <field name="journal_invoice_id_venta" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])],'required': [('type_operation', '=', 'venta')], 'invisible': [('type_operation', '=', 'compra')]}" />
                         <field name="journal_invoice_use_doc_id" attrs="{'readonly': [('state', 'not in', ['cotizacion', 'confirmada'])],'required': [('factura_electronica', '=', True)], 'invisible': [('factura_electronica', '=', False)]}" />
                         <field name="saldo" widget="monetary"/>
@@ -326,6 +326,8 @@
                       <field name="journal_venta_id" domain="[('type', '=', 'purchase')]" required="1"/>
                       <field name="journal_cartera_id" domain="[('type', 'in', ['cash', 'bank'])]" required="1"/>
                       <field name="automatic_validate"/>
+                      <field name="dias_acreditacion_compra"/>
+                      <field name="tipo_dias_acreditacion_compra" required="1"/>
                     </group>
                 </sheet>
             </form>

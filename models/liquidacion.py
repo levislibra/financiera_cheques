@@ -3,6 +3,7 @@
 from openerp import models, fields, api
 import time
 from datetime import datetime, timedelta
+from dateutil import relativedelta
 from openerp.exceptions import UserError
 from openerp.exceptions import ValidationError
 from openerp.tools.translate import _
@@ -200,7 +201,33 @@ class AccountPayment(models.Model):
 
     @api.onchange('check_payment_date')
     def _check_fecha_acreditacion(self):
-        self.check_fecha_acreditacion = self.check_payment_date
+        configuracion_id = self.env['liquidacion.config'].browse(1)
+        dias_acreditacion_compra = configuracion_id.dias_acreditacion_compra
+        tipo_dias_acreditacion_compra = configuracion_id.tipo_dias_acreditacion_compra
+        fecha_inicial = datetime.strptime(self.check_payment_date, "%Y-%m-%d")
+        if tipo_dias_acreditacion_compra == 'continuos':
+            fecha_relativa = relativedelta.relativedelta(days=dias_acreditacion_compra)
+            self.check_fecha_acreditacion = fecha_inicial + fecha_relativa
+        elif tipo_dias_acreditacion_compra == 'habiles':
+            if dias_acreditacion_compra > 0:
+                cr = self.env.cr
+                uid = self.env.uid
+                dias_no_habiles = 0
+                i = 1
+                while dias_acreditacion_compra != 0:
+                    fecha_relativa = relativedelta.relativedelta(days=i)
+                    check_fecha = fecha_inicial + fecha_relativa
+                    es_sabado = check_fecha.weekday() == 5
+                    es_domingo = check_fecha.weekday() == 6
+                    es_feriado = len(self.pool.get('feriados.feriados.dia').search(cr, uid, [('date', '=', check_fecha)])) > 0
+                    i += 1
+                    if es_sabado or es_domingo or es_feriado:
+                        pass
+                    else:
+                        dias_acreditacion_compra -= 1
+                self.check_fecha_acreditacion = check_fecha
+            else:
+                self.check_fecha_acreditacion = fecha_inicial
 
 
 # Clase Obsoleta - Usamos Wizards
@@ -371,10 +398,13 @@ class Liquidacion(models.Model):
         configuracion_id = self.env['liquidacion.config'].browse(1)
         journal_cartera_id = None
         journal_compra_id = None
+        journal_venta_id = None
         if len(configuracion_id.journal_cartera_id) > 0:
             journal_cartera_id = configuracion_id.journal_cartera_id.id
         if len(configuracion_id.journal_compra_id) > 0:
             journal_compra_id = configuracion_id.journal_compra_id.id
+        if len(configuracion_id.journal_venta_id) > 0:
+            journal_venta_id = configuracion_id.journal_venta_id.id
         cr = self.env.cr
         uid = self.env.uid
         currency_id = self.env.user.company_id.currency_id.id
@@ -400,6 +430,8 @@ class Liquidacion(models.Model):
 
             rec.update({
                 'currency_id': currency_id,
+                'journal_id': journal_cartera_id,
+                'journal_invoice_id_venta': journal_venta_id,
             })
         return rec
 
@@ -570,6 +602,13 @@ class Liquidacion(models.Model):
             if len(self.payment_ids) == 0:
                 raise UserError("No puede confirmar una compra de cheques vacia.")
             else:
+                for payment_id in self.payment_ids:
+                    if len(payment_id.check_firmante_id) == 0:
+                        raise UserError("Faltan datos de cheques (Firmante).")
+                    if payment_id.check_payment_date == False:
+                        raise UserError("Faltan datos de cheques (Fecha de pago).")
+                    if payment_id.check_fecha_acreditacion == False:
+                        raise UserError("Faltan datos de cheques (Fecha de acreditacion).")
                 self.state = 'confirmada'
                 self.confirmar_payments()
                 self.facturar()
@@ -837,6 +876,7 @@ class Liquidacion(models.Model):
                 'company_id': 1,
                 'date': self.fecha,
                 'invoice_line_ids': [(0, 0, ail), (0, 0, ail2)],
+                'type': 'in_invoice',
             }
             new_invoice_id = self.env['account.invoice'].create(account_invoice_customer0)
             #hacer configuracion de validacion automatica
@@ -878,6 +918,9 @@ class LiquidacionConfig(models.Model):
     journal_venta_id = fields.Many2one('account.journal', 'Diario de venta')
     journal_cartera_id = fields.Many2one('account.journal', 'Diario de cheques')
     automatic_validate = fields.Boolean('Validacion automatica de facturas', default=True)
+    dias_acreditacion_compra = fields.Integer('Dias de acreditacion en compra')
+    tipo_dias_acreditacion_compra = fields.Selection([('habiles', 'Habiles'), ('continuos', 'Continuos')], default='habiles', string='Tipo de dias')
+
 
 
 class ExtendsPaymentGroup(models.Model):
@@ -1012,6 +1055,7 @@ class ExtendsAccountCheck(models.Model):
         print self
         params = {
             'cheque_id': self.id,
+            'liquidacion_id': self.check_liquidacion_id_venta.id,
         }
         view_id = self.env['liquidacion.cheque.wizard']
         new = view_id.create(params)
