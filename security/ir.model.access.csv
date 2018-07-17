@@ -4,6 +4,7 @@ user_check_scanner,check.scanner,model_check_scanner,financiera_cheques.user,1,1
 user_account_payment,account.payment,model_account_payment,financiera_cheques.user,1,1,1,0
 user_liquidacion_pago,liquidacion.pago,model_liquidacion_pago,financiera_cheques.user,1,1,1,0
 user_liquidacion,liquidacion,model_liquidacion,financiera_cheques.user,1,1,1,0
+user_liquidacion_config,liquidacion.config,model_liquidacion_config,financiera_cheques.user,1,1,1,0
 user_account_payment_group,account.payment.group,model_account_payment_group,financiera_cheques.user,1,1,1,0
 user_account_move_line,account.move.line,model_account_move_line,financiera_cheques.user,1,1,1,0
 user_res_partner,res.partner,model_res_partner,financiera_cheques.user,1,1,1,0
