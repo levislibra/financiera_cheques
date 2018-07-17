@@ -161,7 +161,7 @@
         <field name="arch" type="xml">
             <form string="Liquidacion">
                 <header>
-                    <button name="confirmar" class="oe_highlight" string="Confirmar" type="object" />
+                    <button name="confirmar" class="oe_highlight" string="Confirmar" states="cotizacion" type="object" />
                     <!-- <button name="borrador" class="oe_highlight" string="Enviar a borrador" type="object" /> -->
                     <!-- attrs="{'invisible': [('state', '!=', 'cotizacion')]}" -->
                     <button name="facturar" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', '!=', 'confirmada')]}" class="oe_highlight" string="Facturar" type="object" />

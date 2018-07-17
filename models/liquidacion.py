@@ -201,33 +201,34 @@ class AccountPayment(models.Model):
 
     @api.onchange('check_payment_date')
     def _check_fecha_acreditacion(self):
-        configuracion_id = self.env['liquidacion.config'].browse(1)
-        dias_acreditacion_compra = configuracion_id.dias_acreditacion_compra
-        tipo_dias_acreditacion_compra = configuracion_id.tipo_dias_acreditacion_compra
-        fecha_inicial = datetime.strptime(self.check_payment_date, "%Y-%m-%d")
-        if tipo_dias_acreditacion_compra == 'continuos':
-            fecha_relativa = relativedelta.relativedelta(days=dias_acreditacion_compra)
-            self.check_fecha_acreditacion = fecha_inicial + fecha_relativa
-        elif tipo_dias_acreditacion_compra == 'habiles':
-            if dias_acreditacion_compra > 0:
-                cr = self.env.cr
-                uid = self.env.uid
-                dias_no_habiles = 0
-                i = 1
-                while dias_acreditacion_compra != 0:
-                    fecha_relativa = relativedelta.relativedelta(days=i)
-                    check_fecha = fecha_inicial + fecha_relativa
-                    es_sabado = check_fecha.weekday() == 5
-                    es_domingo = check_fecha.weekday() == 6
-                    es_feriado = len(self.pool.get('feriados.feriados.dia').search(cr, uid, [('date', '=', check_fecha)])) > 0
-                    i += 1
-                    if es_sabado or es_domingo or es_feriado:
-                        pass
-                    else:
-                        dias_acreditacion_compra -= 1
-                self.check_fecha_acreditacion = check_fecha
-            else:
-                self.check_fecha_acreditacion = fecha_inicial
+        if self.check_payment_date:
+            configuracion_id = self.env['liquidacion.config'].browse(1)
+            dias_acreditacion_compra = configuracion_id.dias_acreditacion_compra
+            tipo_dias_acreditacion_compra = configuracion_id.tipo_dias_acreditacion_compra
+            fecha_inicial = datetime.strptime(self.check_payment_date, "%Y-%m-%d")
+            if tipo_dias_acreditacion_compra == 'continuos':
+                fecha_relativa = relativedelta.relativedelta(days=dias_acreditacion_compra)
+                self.check_fecha_acreditacion = fecha_inicial + fecha_relativa
+            elif tipo_dias_acreditacion_compra == 'habiles':
+                if dias_acreditacion_compra > 0:
+                    cr = self.env.cr
+                    uid = self.env.uid
+                    dias_no_habiles = 0
+                    i = 1
+                    while dias_acreditacion_compra != 0:
+                        fecha_relativa = relativedelta.relativedelta(days=i)
+                        check_fecha = fecha_inicial + fecha_relativa
+                        es_sabado = check_fecha.weekday() == 5
+                        es_domingo = check_fecha.weekday() == 6
+                        es_feriado = len(self.pool.get('feriados.feriados.dia').search(cr, uid, [('date', '=', check_fecha)])) > 0
+                        i += 1
+                        if es_sabado or es_domingo or es_feriado:
+                            pass
+                        else:
+                            dias_acreditacion_compra -= 1
+                    self.check_fecha_acreditacion = check_fecha
+                else:
+                    self.check_fecha_acreditacion = fecha_inicial
 
 
 # Clase Obsoleta - Usamos Wizards
@@ -770,7 +771,7 @@ class Liquidacion(models.Model):
             'description_financiera': "Liquidacion #" + str(self.id).zfill(8) + " - Pago al cliente",
         }
         payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
-        payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'customer')])[0]
+        payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', self.partner_type)])[0]
         apg_values = {
             'payment_date': date,
             'company_id': 1,
@@ -780,6 +781,44 @@ class Liquidacion(models.Model):
             'receiptbook_id': payment_group_receiptbook_id,
             'partner_type': self.partner_type,
             'account_internal_type': 'payable',
+        }
+        new_payment_group_id = self.env['account.payment.group'].create(apg_values)
+        new_payment_group_id.post()
+        self.payment_group_ids = [new_payment_group_id.id]
+
+
+    @api.one
+    def cobrar_liquidacion(self, date, amount, journal_id):
+        currency_id = self.env.user.company_id.currency_id.id
+        cr = self.env.cr
+        uid = self.env.uid
+
+        #Cobro al cliente
+        payment_method_obj = self.pool.get('account.payment.method')
+        payment_method_id = payment_method_obj.search(cr, uid, [('code', '=', 'manual'), ('payment_type', '=', 'inbound')])[0]
+        ap_values = {
+            'payment_type': 'inbound',
+            'partner_type': self.partner_type,
+            'partner_id': self.partner_id.id,
+            'amount': amount,
+            'payment_date': date,
+            'journal_id': journal_id.id,
+            'payment_method_code': 'manual',
+            'currency_id': currency_id,
+            'payment_method_id': payment_method_id,
+            'description_financiera': "Venta #" + str(self.id).zfill(8) + " - Cobro al cliente",
+        }
+        payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
+        payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', self.partner_type)])[0]
+        apg_values = {
+            'payment_date': date,
+            'company_id': 1,
+            'partner_id': self.partner_id.id,
+            'currency_id': currency_id,
+            'payment_ids': [(0,0,ap_values)],
+            'receiptbook_id': payment_group_receiptbook_id,
+            'partner_type': self.partner_type,
+            'account_internal_type': 'receivable',
         }
         new_payment_group_id = self.env['account.payment.group'].create(apg_values)
         new_payment_group_id.post()

@@ -19,11 +19,10 @@ class FinancieraPaymentWizard(models.TransientModel):
 
     @api.one
     def confirm_payment(self):
-        print "CONFIRM PAYMENT"
         if self.type_operation == 'compra':
             self.liquidacion_id.pagar_liquidacion(self.date, self.amount,self.journal_payment_out_id)
         elif self.type_operation == 'venta':
-            pass
+            self.liquidacion_id.cobrar_liquidacion(self.date, self.amount,self.journal_payment_in_id)
 
 class FinancieraChequeWizard(models.TransientModel):
     _name = 'liquidacion.cheque.wizard'
