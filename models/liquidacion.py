@@ -604,6 +604,7 @@ class Liquidacion(models.Model):
                 raise UserError("No puede confirmar una compra de cheques vacia.")
             else:
                 for payment_id in self.payment_ids:
+                    payment_id.payment_date = self.fecha
                     if len(payment_id.check_firmante_id) == 0:
                         raise UserError("Faltan datos de cheques (Firmante).")
                     if payment_id.check_payment_date == False:
