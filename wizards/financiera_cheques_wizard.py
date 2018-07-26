@@ -28,7 +28,7 @@ class FinancieraChequeWizard(models.TransientModel):
     _name = 'liquidacion.cheque.wizard'
 
     cheque_id = fields.Many2one('account.check', "Cheque")
-    liquidacion_id = fields.Many2one('liquidaicon', "Liquidaicon")
+    liquidacion_id = fields.Many2one('liquidacion', "Liquidacion")
 
     @api.one
     def confirm_eliminar_seleccion(self):

@@ -1021,7 +1021,7 @@ class ExtendsAccountCheck(models.Model):
     company_currency_id = fields.Many2one('res.currency', string="Moneda de la Compania", compute='_compute_currency_id')
 
     # Campos para el calculo de venta de cheques
-    check_liquidacion_id_venta = fields.Many2one('liquidacion', 'Liquidaicon venta')
+    check_liquidacion_id_venta = fields.Many2one('liquidacion', 'Liquidacion venta')
     check_fecha_acreditacion_venta = fields.Date('Acreditacion')
     check_dias_venta = fields.Integer(string='Dias', compute='_check_dias_venta')
     check_tasa_fija_venta = fields.Float('Impuesto')
