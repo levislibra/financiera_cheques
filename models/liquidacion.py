@@ -1091,8 +1091,6 @@ class ExtendsAccountCheck(models.Model):
 
     @api.multi
     def wizard_eliminar_seleccion(self):
-        print "Wizards eliminar_seleccion"
-        print self
         params = {
             'cheque_id': self.id,
             'liquidacion_id': self.check_liquidacion_id_venta.id,
