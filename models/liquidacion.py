@@ -344,6 +344,17 @@ class Liquidacion(models.Model):
     property_account_receivable_id = fields.Integer('Default debit id', compute='_compute_receivable')
     property_account_payable_id = fields.Integer('Default Credit id', compute='_compute_payable')
     partner_type = fields.Selection([('customer', 'Cliente'), ('supplier', 'Proveedor')], string='Tipo de partner', compute='_compute_partner_type', readonly=True)
+    # Mutuo
+    mutuante_nombre = fields.Char('Mutuante')
+    mutuante_cuit = fields.Char('CUIT/DNI')
+    mutuante_domicilio_calle = fields.Char('Domicilio calle')
+    mutuante_domicilio_ciudad = fields.Char('Domicilio ciudad')
+    
+    mutuario_nombre = fields.Char('Mutuario')
+    mutuario_cuit = fields.Char('CUIT/DNI')
+    mutuario_domicilio_calle = fields.Char('Domicilio calle')
+    mutuario_domicilio_ciudad = fields.Char('Domicilio ciudad')
+    # mutuo_fecha = fields.Date('Fecha mutuo')
 
     @api.model
     def create(self, values):
@@ -378,6 +389,11 @@ class Liquidacion(models.Model):
             self.tasa_fija = self.partner_id.tasa_fija
         elif self.type_operation == 'venta':
             self.tasa_fija = self.partner_id.tasa_fija_venta
+        # Mutuario
+        self.mutuario_nombre = self.partner_id.name
+        self.mutuario_cuit = self.partner_id.main_id_number
+        self.mutuario_domicilio_calle = self.partner_id.street
+        self.mutuario_domicilio_ciudad = self.partner_id.city
 
     @api.one
     @api.onchange('partner_id')
@@ -410,6 +426,12 @@ class Liquidacion(models.Model):
         uid = self.env.uid
         currency_id = self.env.user.company_id.currency_id.id
         if type_operation == 'compra':
+
+            mutuante_nombre = configuracion_id.mutuante_nombre
+            mutuante_cuit = configuracion_id.mutuante_cuit
+            mutuante_domicilio_calle = configuracion_id.mutuante_domicilio_calle
+            mutuante_domicilio_ciudad = configuracion_id.mutuante_domicilio_ciudad
+
             payment_method_obj = self.pool.get('account.payment.method')
             payment_method_id = payment_method_obj.search(cr, uid, [('code', '=', 'received_third_check')])[0]
 
@@ -426,6 +448,10 @@ class Liquidacion(models.Model):
                 'journal_id': journal_cartera_id,
                 'journal_invoice_id': journal_compra_id,
                 'journal_invoice_use_doc_id': None,
+                'mutuante_nombre': mutuante_nombre or "",
+                'mutuante_cuit': mutuante_cuit or "",
+                'mutuante_domicilio_calle': mutuante_domicilio_calle or "",
+                'mutuante_domicilio_ciudad': mutuante_domicilio_ciudad or "",
             })
         elif type_operation == 'venta':
 
@@ -960,6 +986,11 @@ class LiquidacionConfig(models.Model):
     automatic_validate = fields.Boolean('Validacion automatica de facturas', default=True)
     dias_acreditacion_compra = fields.Integer('Dias de acreditacion en compra')
     tipo_dias_acreditacion_compra = fields.Selection([('habiles', 'Habiles'), ('continuos', 'Continuos')], default='habiles', string='Tipo de dias')
+    # Mutuo
+    mutuante_nombre = fields.Char('Mutuante')
+    mutuante_cuit = fields.Char('CUIT/DNI')
+    mutuante_domicilio_calle = fields.Char('Domicilio calle')
+    mutuante_domicilio_ciudad = fields.Char('Domicilio ciudad')
 
 
 

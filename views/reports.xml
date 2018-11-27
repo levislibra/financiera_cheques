@@ -88,8 +88,8 @@
     <template id="resumen_liquidacion_cliente">
         <!--<t t-call="report.external_layout">-->
             <t t-foreach="docs" t-as="o">
-            <div class="page" style="font-size:12px;">
-                <br/><br/><br/><br/>
+            <div class="page" style="font-size:16px;">
+                <!-- <br/><br/><br/><br/> -->
                 <strong>Liquidacion: </strong><span t-field="o.id"/><br/>
                 <strong>Cliente: </strong><span t-field="o.partner_id"/><br/>
                 <strong>Direccion: </strong><span t-field="o.partner_id.contact_address"/><br/>
@@ -163,6 +163,61 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+            </t>
+    </template>
+
+   <template id="contrato_mutuo_cliente">
+        <!--<t t-call="report.external_layout">-->
+            <t t-foreach="docs" t-as="o">
+            <div align="justify" class="page" style="font-size:20px;padding-top:0px;margin-top:0px">
+                <p align="center"><b>CONTRATO MUTUO</b></p>
+                <p>
+                    Entre <t t-if="o.mutuante_nombre"><span t-field="o.mutuante_nombre"/></t><t t-if="not o.mutuante_nombre">……………………………………………</t>, CUIT/DNI <t t-if="o.mutuante_cuit"><span t-field="o.mutuante_cuit"/></t><t t-if="not o.mutuante_cuit">………………………</t>, con domicilio en calle <t t-if="o.mutuante_domicilio_calle"><span t-field="o.mutuante_domicilio_calle"/></t><t t-if="not o.mutuante_domicilio_calle">……………………………………</t> Localidad <t t-if="o.mutuante_domicilio_ciudad"><span t-field="o.mutuante_domicilio_ciudad"/></t><t t-if="not o.mutuante_domicilio_ciudad">…………………………………</t>, en adelante <b>EL MUTUANTE</b> por una parte y por la otra parte el Sr/a <t t-if="o.mutuario_nombre"><span t-field="o.mutuario_nombre"/></t><t t-if="not o.mutuario_nombre">……………………………………………</t>, CUIT/DNI <t t-if="o.mutuario_cuit"><span t-field="o.mutuario_cuit"/></t><t t-if="not o.mutuario_cuit">…………………………</t>, con domicilio en calle <t t-if="o.mutuario_domicilio_calle"><span t-field="o.mutuario_domicilio_calle"/></t><t t-if="not o.mutuario_domicilio_calle">……………………………………………</t>, de la Ciudad de <t t-if="o.mutuario_domicilio_ciudad"><span t-field="o.mutuario_domicilio_ciudad"/></t><t t-if="not o.mutuario_domicilio_ciudad">………………………</t>, en adelante denominado <b>EL MUTUARIO</b>, se convienen en celebrar el presente Contrato de Mutuo, que se regirá por las siguientes cláusulas:
+                </p>
+                <p>
+                    <b>PRIMERA:</b> Las partes dejan constancia que el préstamo de dinero es por la suma de PESOS …………………………………. ($ <t t-esc="'{:0,.2f}'.format(sum(l.amount for l in o.payment_ids)).replace(',', '_').replace('.', ',').replace('_', '.')"/>). <b>EL MUTUANTE</b> da a <b>EL MUTUARIO</b> dicha suma de dinero de la siguiente forma y plazo: …………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………..
+                </p>
+                <p>
+                    <b>SEGUNDA: EL MUTUARIO</b> se compromete a restituir a <b>EL MUTUANTE</b> igual suma dineraria que la señalada en la anterior cláusula, con más un interés compensatorio total equivalente al ….……………………………………….. por ciento (…….%) nominal con IVA incluido, en la siguiente forma y plazo: ………………………………………………………………………………………………… ……………………………………………………………………………………………………………………………. Se fija como lugar de pago el domicilio de <b>EL MUTUANTE</b>. El incumplimiento de esta obligación a cargo de <b>EL MUTUARIO</b> producirá la mora automática, lo cual generará una indemnización en concepto de cláusula penal o multa por mora consistente en la suma dineraria equivalente al ……% diario, calculado sobre el monto total adeudado, todo ello hasta el día en que se efectivice el pleno cumplimiento de la obligación señalada.
+                </p>
+                <p>
+                    <b>TERCERA: EL MUTUARIO</b> entrega en este acto a <b>EL MUTUANTE</b>, quien recibe de plena y total conformidad, el/los siguiente/s cheque/s
+                </p>
+                <table class="table table-condensed">
+                    <thead>
+                        <tr>
+                            
+                            <th style="width:15%;">Nro Cheque</th>
+                            <th style="width:15%;">Vencimiento</th>
+                            <th style="width:15%;">Banco</th>
+                            <th style="width:15%;">Importe</th>
+                            <th style="width:15%;">Firmante</th>
+                        </tr>
+                    </thead>
+                    <tbody class="invoice_tbody">
+                        <tr t-foreach="o.payment_ids" t-as="l">
+                            <td style="width:15%;"><span t-field="l.check_number"/></td>
+                            <td style="width:15%;"><span t-field="l.check_payment_date"/></td>
+                            <td style="width:15%;"><span t-field="l.check_bank_id"/></td>
+                            <td style="width:15%;"><span t-field="l.amount"/></td>
+                            <td style="width:25%;"><span t-field="l.check_firmante_id"/></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>
+                    En caso de efectivizarse el/los documento/s detallados anteriormente, será imputado al pago establecido en la anterior clausula y se dará por cumplida la obligación a cargo de <b>EL MUTUARIO</b>.
+                </p>
+                <p>
+                    <b>CUARTA:</b> Las esperas, prorrogas, renovaciones o facilidades que <b>EL MUTUANTE</b> resolviera conceder a <b>EL MUTUARIO</b> dentro o fuera de los plazos estipulados, no significan novación de la obligación, ni alteración de las garantías existentes.
+                </p>
+                <p>
+                    <b>QUINTA:</b> Quedan constituidos como domicilios especiales a los efectos del presente contrato los declarados por cada parte "ut-supra", respectivamente, donde tendrán plena validez todas las notificaciones, judiciales y extrajudiciales.
+                </p>
+                <p>
+                    <b>SEXTA:</b> Para cualquier gestión judicial y/o extrajudicial derivada del presente, las partes renuncian a cualquier fuero de excepción que le pudiera corresponder, incluso el federal, quedando sometidos a la competencia de los Tribunales Ordinarios de la ciudad de ………………………………, con exclusión de cualquier otro.
+                    En la ciudad de Laguna Larga (Cba.) a los ………………………………. del mes de ………………….. de dos mil ………………, previa lectura y ratificación, firman las partes dos ejemplares del mismo tenor y un solo efecto.
+                </p>
             </div>
             </t>
     </template>

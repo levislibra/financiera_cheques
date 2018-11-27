@@ -19,6 +19,15 @@
 			attachment_use="False"
 			file="financiera_cheques.resumen_liquidacion_cliente"
 		/>
+		<report 
+			id="custom_contrato_mutuo_cliente"
+			model="liquidacion"
+			string="Contrato Mutuo"
+			report_type="qweb-pdf"
+			name="financiera_cheques.contrato_mutuo_cliente"
+			attachment_use="False"
+			file="financiera_cheques.contrato_mutuo_cliente"
+		/>
 
 		<report 
 			id="custom_resumen_cta_cte_cliente"

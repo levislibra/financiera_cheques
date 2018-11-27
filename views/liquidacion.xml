@@ -269,14 +269,27 @@
                             <field name="debt_move_line_ids"/>
                         </page> -->
                         <page string="Otra Informacion">
-                          <group>
-                            <field name="receiptbook_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': [('type_operation', '=', 'compra')], 'invisible': [('type_operation', '!=', 'compra')]}"/>
-                            <field name="payment_method_id" attrs="{'required': [('type_operation', '=', 'compra')], 'invisible': [('type_operation', '!=', 'compra')]}"/>
-                            <field name="currency_id" attrs="{'required': True}"/>
-                            <field name="move_id"/>
-                            <field name="invoice_id"/>
-                            <field name="payment_group_id"/>
-                           </group>
+                            <group>
+                              <group>
+                                <field name="receiptbook_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'required': [('type_operation', '=', 'compra')], 'invisible': [('type_operation', '!=', 'compra')]}"/>
+                                <field name="payment_method_id" attrs="{'required': [('type_operation', '=', 'compra')], 'invisible': [('type_operation', '!=', 'compra')]}"/>
+                                <field name="currency_id" attrs="{'required': True}"/>
+                                <field name="move_id"/>
+                                <field name="invoice_id"/>
+                                <field name="payment_group_id"/>
+                               </group>
+                               <group string="Mutuo">
+                                <!-- <field name="mutuo_fecha"/> -->
+                                <field name="mutuante_nombre"/>
+                                <field name="mutuante_cuit"/>
+                                <field name="mutuante_domicilio_calle"/>
+                                <field name="mutuante_domicilio_ciudad"/>
+                                <field name="mutuario_nombre"/>
+                                <field name="mutuario_cuit"/>
+                                <field name="mutuario_domicilio_calle"/>
+                                <field name="mutuario_domicilio_ciudad"/>
+                               </group>
+                            </group>
                         </page>
                     </notebook>
                 </sheet>
@@ -321,13 +334,23 @@
             <form string="Configuracion" create="false" delete="false">
                 <sheet>
                     <group>
-                      <field name="name"/>
-                      <field name="journal_compra_id" domain="[('type', '=', 'sale')]" required="1"/>
-                      <field name="journal_venta_id" domain="[('type', '=', 'purchase')]" required="1"/>
-                      <field name="journal_cartera_id" domain="[('type', 'in', ['cash', 'bank'])]" required="1"/>
-                      <field name="automatic_validate"/>
-                      <field name="dias_acreditacion_compra"/>
-                      <field name="tipo_dias_acreditacion_compra" required="1"/>
+                        <field name="name"/>
+                    </group>
+                    <group>
+                        <group string="Contable">
+                            <field name="journal_compra_id" domain="[('type', '=', 'sale')]" required="1"/>
+                            <field name="journal_venta_id" domain="[('type', '=', 'purchase')]" required="1"/>
+                            <field name="journal_cartera_id" domain="[('type', 'in', ['cash', 'bank'])]" required="1"/>
+                            <field name="automatic_validate"/>
+                            <field name="dias_acreditacion_compra"/>
+                            <field name="tipo_dias_acreditacion_compra" required="1"/>
+                        </group>
+                        <group string="Mutuante">
+                            <field name="mutuante_nombre"/>
+                            <field name="mutuante_cuit"/>
+                            <field name="mutuante_domicilio_calle"/>
+                            <field name="mutuante_domicilio_ciudad"/>
+                      </group>
                     </group>
                 </sheet>
             </form>
