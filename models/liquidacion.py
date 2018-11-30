@@ -7,7 +7,7 @@ from dateutil import relativedelta
 from openerp.exceptions import UserError
 from openerp.exceptions import ValidationError
 from openerp.tools.translate import _
-
+import amount_to_text_es_MX
 from pprint import pprint
 import logging
 from openerp.osv import orm
@@ -354,7 +354,7 @@ class Liquidacion(models.Model):
     mutuario_cuit = fields.Char('CUIT/DNI')
     mutuario_domicilio_calle = fields.Char('Domicilio calle')
     mutuario_domicilio_ciudad = fields.Char('Domicilio ciudad')
-    # mutuo_fecha = fields.Date('Fecha mutuo')
+    mutuo_monto_texto = fields.Char('Monto', compute='_compute_mutuo_monto_texto')
 
     @api.model
     def create(self, values):
@@ -952,6 +952,10 @@ class Liquidacion(models.Model):
         else:
             raise ValidationError("Falta Diario de Proveedores")
         return True
+
+    @api.one
+    def _compute_mutuo_monto_texto(self):
+        self.mutuo_monto_texto = amount_to_text_es_MX.get_amount_to_text(self, self.get_bruto(), 'centavos', 'pesos con ')
 
     # Metodo Obsoleto - Reemplazado por wizard
     # @api.multi
