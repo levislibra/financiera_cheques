@@ -1030,6 +1030,7 @@ class ExtendsPartner(models.Model):
     tasa_mensual = fields.Float('Tasa mensual de descuento')
     tasa_fija_venta = fields.Float('Tasa de impuestos de venta')
     tasa_mensual_venta = fields.Float('Tasa mensual de descuento en venta')
+    moneda_id = fields.Many2one('res.currency', 'Moneda')
 
 class ExtendsAccountAccount(models.Model):
     _name = 'account.account'

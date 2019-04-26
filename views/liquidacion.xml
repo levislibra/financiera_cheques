@@ -398,6 +398,9 @@
       <field name="model">res.partner</field>
       <field name="inherit_id" ref="base.view_partner_form"/>
       <field name="arch" type="xml">
+        <xpath expr="//field[@name='property_account_payable_id']" position="after">
+          <field name="moneda_id"/>
+        </xpath>
         <xpath expr="//page[3]" position='before'>
           <page string='Financiera'>
             <group string="Tasas compra de cheques">
@@ -409,6 +412,20 @@
               <field name="tasa_mensual_venta"/>
             </group>
           </page>
+        </xpath>
+      </field>
+    </record>
+
+
+    <!-- Vista Tree Partner -->
+
+    <record id="partner_tree_inherited"  model="ir.ui.view">
+      <field name="name">Extension Partner tree</field>
+      <field name="model">res.partner</field>
+      <field name="inherit_id" ref="base.view_partner_tree"/>
+      <field name="arch" type="xml">
+        <xpath expr="//field[@name='email']" position="after">
+          <field name="moneda_id" editable="1"/>
         </xpath>
       </field>
     </record>
