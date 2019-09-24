@@ -858,10 +858,18 @@ class Liquidacion(models.Model):
         vat_tax_id = None
         invoice_line_tax_ids = None
 
+        vat_tax2_id = None
+        invoice_line_tax2_ids = None
+        configuracion_id = self.env['liquidacion.config'].browse(1)
+
         if self.factura_electronica:
             journal_id = self.journal_invoice_use_doc_id
             vat_tax_id = self.vat_tax_id.id
             invoice_line_tax_ids = [(6, 0, [vat_tax_id])]
+            # Asignamos el impuesto al cheque que cobramos (NO gravado)
+            vat_tax2_id = configuracion_id.vat_tax2_id.id
+            invoice_line_tax2_ids = [(6, 0, [vat_tax2_id])]
+
         else:
             journal_id = self.journal_invoice_id
         if journal_id != False and journal_id != None:
@@ -880,8 +888,8 @@ class Liquidacion(models.Model):
                 'name': "Impuesto a los debitos y creditos bancarios por cuenta del cliente.",
                 'quantity':1,
                 'price_unit': self.get_gasto(),
-                #'vat_tax_id': vat_tax_id,
-                #'invoice_line_tax_ids': [(6, 0, [vat_tax_id])],
+                'vat_tax2_id': vat_tax2_id,
+                'invoice_line_tax2_ids': invoice_line_tax2_ids,
                 'account_id': journal_id.default_debit_account_id.id,
             }
             account_invoice_customer0 = {
@@ -990,6 +998,7 @@ class LiquidacionConfig(models.Model):
     automatic_validate = fields.Boolean('Validacion automatica de facturas', default=True)
     dias_acreditacion_compra = fields.Integer('Dias de acreditacion en compra')
     tipo_dias_acreditacion_compra = fields.Selection([('habiles', 'Habiles'), ('continuos', 'Continuos')], default='habiles', string='Tipo de dias')
+    vat_tax2_id = fields.Many2one('account.tax', 'Tasa de IVA Imp Deb y Cred.', domain="[('type_tax_use', '=', 'sale')]")
     # Mutuo
     mutuante_nombre = fields.Char('Mutuante')
     mutuante_cuit = fields.Char('CUIT/DNI')
