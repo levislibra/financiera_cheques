@@ -861,7 +861,6 @@ class Liquidacion(models.Model):
         vat_tax2_id = None
         invoice_line_tax2_ids = None
         configuracion_id = self.env['liquidacion.config'].browse(1)
-
         if self.factura_electronica:
             journal_id = self.journal_invoice_use_doc_id
             vat_tax_id = self.vat_tax_id.id
@@ -869,7 +868,6 @@ class Liquidacion(models.Model):
             # Asignamos el impuesto al cheque que cobramos (NO gravado)
             vat_tax2_id = configuracion_id.vat_tax2_id.id
             invoice_line_tax2_ids = [(6, 0, [vat_tax2_id])]
-
         else:
             journal_id = self.journal_invoice_id
         if journal_id != False and journal_id != None:
@@ -888,8 +886,8 @@ class Liquidacion(models.Model):
                 'name': "Impuesto a los debitos y creditos bancarios por cuenta del cliente.",
                 'quantity':1,
                 'price_unit': self.get_gasto(),
-                'vat_tax2_id': vat_tax2_id,
-                'invoice_line_tax2_ids': invoice_line_tax2_ids,
+                'vat_tax_id': vat_tax2_id,
+                'invoice_line_tax_ids': invoice_line_tax2_ids,
                 'account_id': journal_id.default_debit_account_id.id,
             }
             account_invoice_customer0 = {
@@ -905,9 +903,9 @@ class Liquidacion(models.Model):
             }
             new_invoice_id = self.env['account.invoice'].create(account_invoice_customer0)
             #hacer configuracion de validacion automatica
-            new_invoice_id.signal_workflow('invoice_open')
+            if configuracion_id.automatic_validate:
+                new_invoice_id.signal_workflow('invoice_open')
             self.invoice_id = new_invoice_id.id
-
             self.state = 'facturada'
         else:
             raise ValidationError("Falta Diario de ventas.")
