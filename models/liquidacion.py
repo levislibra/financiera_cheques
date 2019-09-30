@@ -856,7 +856,7 @@ class Liquidacion(models.Model):
         descripcion_cheques = ""
         for cheque_id in self.payment_ids:
             descripcion_cheques += "cheque numero "+str(cheque_id.check_number)
-            descripcion_cheques += ", banco "+str(cheque_id.check_bank_id.name)+"; "
+            descripcion_cheques += ", "+str(cheque_id.check_bank_id.name)+"; "
         return descripcion_cheques
 
     @api.one
@@ -913,6 +913,7 @@ class Liquidacion(models.Model):
                 'currency_id': self.currency_id.id,
                 'company_id': 1,
                 'date': self.fecha,
+                'date_invoice': self.fecha,
                 'invoice_line_ids': ail_ids,
                 'fiscal_position_id': fiscal_position_id,
             }
