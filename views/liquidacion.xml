@@ -345,6 +345,7 @@
                             <field name="dias_acreditacion_compra"/>
                             <field name="tipo_dias_acreditacion_compra" required="1"/>
                             <field name="vat_tax2_id"/>
+                            <field name="fiscal_position_id"/>
                         </group>
                         <group string="Mutuante">
                             <field name="mutuante_nombre"/>

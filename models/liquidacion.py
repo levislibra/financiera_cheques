@@ -851,6 +851,13 @@ class Liquidacion(models.Model):
         new_payment_group_id.post()
         self.payment_group_ids = [new_payment_group_id.id]
 
+    @api.one
+    def get_descripcion_cheques(self):
+        descripcion_cheques = ""
+        for cheque_id in self.payment_ids:
+            descripcion_cheques += "cheque numero "+str(cheque_id.check_number)
+            descripcion_cheques += ", banco "+str(cheque_id.check_bank_id.name)+"; "
+        return descripcion_cheques
 
     @api.one
     def facturar(self):
@@ -871,25 +878,32 @@ class Liquidacion(models.Model):
         else:
             journal_id = self.journal_invoice_id
         if journal_id != False and journal_id != None:
-            # Create invoice line
-            ail = {
-                'name': "Interes por servicios financieros",
-                'quantity':1,
-                'price_unit': self.get_interes(),
-                'vat_tax_id': vat_tax_id,
-                'invoice_line_tax_ids': invoice_line_tax_ids,
-                'account_id': journal_id.default_debit_account_id.id,
-            }
-
-            # Create invoice line
-            ail2 = {
-                'name': "Impuesto a los debitos y creditos bancarios por cuenta del cliente.",
-                'quantity':1,
-                'price_unit': self.get_gasto(),
-                'vat_tax_id': vat_tax2_id,
-                'invoice_line_tax_ids': invoice_line_tax2_ids,
-                'account_id': journal_id.default_debit_account_id.id,
-            }
+            ail_ids = []
+            fiscal_position_id = None
+            if self.get_interes() > 0:
+                # Create invoice line
+                descripcion_cheques = self.get_descripcion_cheques()[0]
+                ail = {
+                    'name': "Interes por servicios financieros. "+descripcion_cheques,
+                    'quantity':1,
+                    'price_unit': self.get_interes(),
+                    'vat_tax_id': vat_tax_id,
+                    'invoice_line_tax_ids': invoice_line_tax_ids,
+                    'account_id': journal_id.default_debit_account_id.id,
+                }
+                ail_ids.append((0,0,ail))
+            if self.get_gasto() > 0:
+                # Create invoice line
+                ail2 = {
+                    'name': "Impuesto a los debitos y creditos bancarios por cuenta del cliente.",
+                    'quantity':1,
+                    'price_unit': self.get_gasto(),
+                    'vat_tax_id': vat_tax2_id,
+                    'invoice_line_tax_ids': invoice_line_tax2_ids,
+                    'account_id': journal_id.default_debit_account_id.id,
+                }
+                ail_ids.append((0,0,ail2))
+                fiscal_position_id = configuracion_id.fiscal_position_id.id
             account_invoice_customer0 = {
                 # 'name': "Liquidacion #" + str(self.id).zfill(8) + " - Intereses",
                 'description_financiera': "Liquidacion #" + str(self.id).zfill(8) + " - Intereses",
@@ -899,7 +913,8 @@ class Liquidacion(models.Model):
                 'currency_id': self.currency_id.id,
                 'company_id': 1,
                 'date': self.fecha,
-                'invoice_line_ids': [(0, 0, ail), (0, 0, ail2)],
+                'invoice_line_ids': ail_ids,
+                'fiscal_position_id': fiscal_position_id,
             }
             new_invoice_id = self.env['account.invoice'].create(account_invoice_customer0)
             #hacer configuracion de validacion automatica
@@ -997,6 +1012,7 @@ class LiquidacionConfig(models.Model):
     dias_acreditacion_compra = fields.Integer('Dias de acreditacion en compra')
     tipo_dias_acreditacion_compra = fields.Selection([('habiles', 'Habiles'), ('continuos', 'Continuos')], default='habiles', string='Tipo de dias')
     vat_tax2_id = fields.Many2one('account.tax', 'Tasa de IVA Imp Deb y Cred.', domain="[('type_tax_use', '=', 'sale')]")
+    fiscal_position_id = fields.Many2one('account.fiscal.position', 'Posicion Fiscal')
     # Mutuo
     mutuante_nombre = fields.Char('Mutuante')
     mutuante_cuit = fields.Char('CUIT/DNI')
@@ -1004,6 +1020,30 @@ class LiquidacionConfig(models.Model):
     mutuante_domicilio_ciudad = fields.Char('Domicilio ciudad')
 
 
+# class ExtendsAccountInvoice(models.Model):
+#     _name = 'account.invoice'
+#     _inherit = 'account.invoice'
+
+#     @api.one
+#     def _compute_amount(self):
+#         rec = super(ExtendsAccountInvoice, self)._compute_amount()
+#         amount_tax = 0
+#         for line in self.tax_line_ids:
+#             if line.amount > 0:
+#                 # 0.005 se redonde hacia abajo en AFIP no asi en python
+#                 # => restar 0.001:
+#                 # desde 0.000 a 0.005 - 0.001 = 0.00
+#                 # desde 0.006 a 0.009 - 0.001 = 0.01
+#                 line.amount = line.amount - 0.001
+#                 amount_tax += line.amount
+#         self.amount_tax = amount_tax
+#         self.amount_total = self.amount_untaxed + self.amount_tax
+
+# class ExtendsAccountInvoiceTax(models.Model):
+#     _name = 'account.invoice.tax'
+#     _inherit = 'account.invoice.tax'
+
+#     amount = fields.Monetary(digits=(16,2))
 
 class ExtendsPaymentGroup(models.Model):
     _name = 'account.payment.group'
