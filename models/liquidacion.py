@@ -1196,3 +1196,90 @@ class ExtendsAccountCheck(models.Model):
     def eliminar_seleccion(self):
         self.check_liquidacion_id_venta = None
 
+    # Reescribimos funcion original
+    @api.multi
+    def action_create_debit_note(
+            self, operation, partner_type, partner, account):
+        self.ensure_one()
+        action_date = self._context.get('action_date')
+        if operation == 'rejected':
+            # Recalculamos si es cuenta cliente o proveedor
+            # Ver que tipo de pago participo el cheque en cuestion
+            # Para ello tomar el origen de la ultima operacion
+            ultima_operacion = self.operation_ids[len(self.operation_ids)-2]
+            origen_id = ultima_operacion.origin
+            origen_tipo = origen_id._name
+            if origen_tipo == 'account.payment':
+                # Asignamos el tipo recibo ya que de eso depende
+                # si el cheque fue a la cuenta como cliente o proveedor
+                partner_type = origen_id.receiptbook_id.partner_type
+
+        if partner_type == 'supplier':
+            invoice_type = 'in_invoice'
+            journal_type = 'purchase'
+            view_id = self.env.ref('account.invoice_supplier_form').id
+        else:
+            invoice_type = 'out_invoice'
+            journal_type = 'sale'
+            view_id = self.env.ref('account.invoice_form').id
+
+        journal = self.env['account.journal'].search([
+            ('company_id', '=', self.company_id.id),
+            ('type', '=', journal_type),
+        ], limit=1)
+
+        # si pedimos rejected o reclamo, devolvemos mensaje de rechazo y cuenta
+        # de rechazo
+        if operation in ['rejected', 'reclaimed']:
+            name = 'Rechazo cheque "%s"' % (self.name)
+        # si pedimos la de holding es una devolucion
+        elif operation == 'returned':
+            name = 'Devolución cheque "%s"' % (self.name)
+        else:
+            raise ValidationError(_(
+                'Debit note for operation %s not implemented!' % (
+                    operation)))
+
+        inv_line_vals = {
+            # 'product_id': self.product_id.id,
+            'name': name,
+            'account_id': account.id,
+            'price_unit': self.amount,
+            # 'invoice_id': invoice.id,
+        }
+
+        inv_vals = {
+            # this is the reference that goes on account.move.line of debt line
+            # 'name': name,
+            # this is the reference that goes on account.move
+            'rejected_check_id': self.id,
+            'reference': name,
+            'date_invoice': action_date,
+            'origin': _('Check nbr (id): %s (%s)') % (self.name, self.id),
+            'journal_id': journal.id,
+            # this is done on muticompany fix
+            # 'company_id': journal.company_id.id,
+            'partner_id': partner.id,
+            'type': invoice_type,
+            'invoice_line_ids': [(0, 0, inv_line_vals)],
+        }
+        if operation == 'rejected' and origen_tipo == 'account.payment':
+            inv_vals['name'] = name
+            if partner_type == 'customer':
+                inv_line_vals['price_unit'] = -self.amount
+        if self.currency_id:
+            inv_vals['currency_id'] = self.currency_id.id
+        # we send internal_type for compatibility with account_document
+        invoice = self.env['account.invoice'].with_context(
+            internal_type='debit_note').create(inv_vals)
+        self._add_operation(operation, invoice, partner, date=action_date)
+
+        return {
+            'name': name,
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_model': 'account.invoice',
+            'view_id': view_id,
+            'res_id': invoice.id,
+            'type': 'ir.actions.act_window',
+        }
