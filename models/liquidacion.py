@@ -904,24 +904,25 @@ class Liquidacion(models.Model):
                 }
                 ail_ids.append((0,0,ail2))
                 fiscal_position_id = configuracion_id.fiscal_position_id.id
-            account_invoice_customer0 = {
-                # 'name': "Liquidacion #" + str(self.id).zfill(8) + " - Intereses",
-                'description_financiera': "Liquidacion #" + str(self.id).zfill(8) + " - Intereses",
-                'account_id': self.account_id.id,
-                'partner_id': self.partner_id.id,
-                'journal_id': journal_id.id,
-                'currency_id': self.currency_id.id,
-                'company_id': 1,
-                'date': self.fecha,
-                'date_invoice': self.fecha,
-                'invoice_line_ids': ail_ids,
-                'fiscal_position_id': fiscal_position_id,
-            }
-            new_invoice_id = self.env['account.invoice'].create(account_invoice_customer0)
-            #hacer configuracion de validacion automatica
-            if configuracion_id.automatic_validate:
-                new_invoice_id.signal_workflow('invoice_open')
-            self.invoice_id = new_invoice_id.id
+            if len(ail_ids) > 0:
+                account_invoice_customer0 = {
+                    # 'name': "Liquidacion #" + str(self.id).zfill(8) + " - Intereses",
+                    'description_financiera': "Liquidacion #" + str(self.id).zfill(8) + " - Intereses",
+                    'account_id': self.account_id.id,
+                    'partner_id': self.partner_id.id,
+                    'journal_id': journal_id.id,
+                    'currency_id': self.currency_id.id,
+                    'company_id': 1,
+                    'date': self.fecha,
+                    'date_invoice': self.fecha,
+                    'invoice_line_ids': ail_ids,
+                    'fiscal_position_id': fiscal_position_id,
+                }
+                new_invoice_id = self.env['account.invoice'].create(account_invoice_customer0)
+                #hacer configuracion de validacion automatica
+                if configuracion_id.automatic_validate:
+                    new_invoice_id.signal_workflow('invoice_open')
+                self.invoice_id = new_invoice_id.id
             self.state = 'facturada'
         else:
             raise ValidationError("Falta Diario de ventas.")

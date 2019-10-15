@@ -165,7 +165,7 @@
                     <!-- <button name="borrador" class="oe_highlight" string="Enviar a borrador" type="object" /> -->
                     <!-- attrs="{'invisible': [('state', '!=', 'cotizacion')]}" -->
                     <button name="facturar" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', '!=', 'confirmada')]}" class="oe_highlight" string="Facturar" type="object" />
-                    <button name="ver_factura" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', '!=', 'facturada')]}" class="oe_highlight" string="Ver Factura" type="object" />
+                    <button name="ver_factura" attrs="{'invisible': [('invoice_id', '=', False)]}" class="oe_highlight" string="Ver Factura" type="object" />
 
                     <button name="wizard_payment" attrs="{'invisible': ['|', ('type_operation', '=', 'venta'), ('state', '!=', 'facturada')]}" class="oe_highlight"  string="Pagar" type="object" />
                     <button name="wizard_payment" attrs="{'invisible': ['|', ('type_operation', '!=', 'venta'), ('state', '!=', 'facturada')]}" class="oe_highlight"  string="Cobrar" type="object" />
