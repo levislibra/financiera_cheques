@@ -1224,10 +1224,12 @@ class ExtendsAccountCheck(models.Model):
             journal_type = 'sale'
             view_id = self.env.ref('account.invoice_form').id
 
-        journal = self.env['account.journal'].search([
-            ('company_id', '=', self.company_id.id),
-            ('type', '=', journal_type),
-        ], limit=1)
+        # journal = self.env['account.journal'].search([
+        #     ('company_id', '=', self.company_id.id),
+        #     ('type', '=', journal_type),
+        # ], limit=1)
+        configuracion_id = self.env['liquidacion.config'].browse(1)
+        journal = configuracion_id.journal_cartera_id
 
         # si pedimos rejected o reclamo, devolvemos mensaje de rechazo y cuenta
         # de rechazo
@@ -1284,3 +1286,4 @@ class ExtendsAccountCheck(models.Model):
             'res_id': invoice.id,
             'type': 'ir.actions.act_window',
         }
+
