@@ -192,6 +192,7 @@
                         <field name="saldo" widget="monetary"/>
                       </group>
                       <group>
+                        <field name="company_id"/>
                         <field name="type_operation" attrs="{'readonly': [('state', '!=', 'cotizacion')]}" readonly="1"/>
                         <field name="partner_type" invisible="1"/>
                         <field name="analytic_id" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': True}"/>
@@ -334,7 +335,8 @@
             <form string="Configuracion" create="false" delete="false">
                 <sheet>
                     <group>
-                        <field name="name"/>
+                      <field name="company_id" groups="base.group_erp_manager"/>
+                      <field name="name"/>
                     </group>
                     <group>
                         <group string="Contable">
@@ -349,9 +351,11 @@
                         </group>
                         <group string="Mutuante">
                             <field name="mutuante_nombre"/>
+                            <field name="mutuante_nombre_fantasia"/>
                             <field name="mutuante_cuit"/>
                             <field name="mutuante_domicilio_calle"/>
                             <field name="mutuante_domicilio_ciudad"/>
+                            <field name="mutuo_tribunales"/>
                       </group>
                     </group>
                 </sheet>

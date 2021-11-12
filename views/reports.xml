@@ -2,6 +2,17 @@
 <!--Custom report-->
 <openerp>
 <data>
+
+    <report 
+			id="custom_resumen_liquidacion"
+			model="liquidacion"
+			string="Liquidacion"
+			report_type="qweb-pdf"
+			name="financiera_cheques.resumen_liquidacion"
+			attachment_use="False"
+			file="financiera_cheques.resumen_liquidacion"
+		/>
+
     <template id="resumen_liquidacion">
         <t t-call="report.external_layout">
             <t t-foreach="docs" t-as="o">
@@ -85,6 +96,16 @@
         </t>
     </template>
 
+    <report 
+			id="custom_resumen_liquidacion_cliente"
+			model="liquidacion"
+			string="Liquidacion sin encabezado"
+			report_type="qweb-pdf"
+			name="financiera_cheques.resumen_liquidacion_cliente"
+			attachment_use="False"
+			file="financiera_cheques.resumen_liquidacion_cliente"
+		/>
+
     <template id="resumen_liquidacion_cliente">
         <!--<t t-call="report.external_layout">-->
             <t t-foreach="docs" t-as="o">
@@ -167,7 +188,17 @@
             </t>
     </template>
 
-   <template id="contrato_mutuo_cliente">
+    <report 
+			id="custom_contrato_mutuo_cliente"
+			model="liquidacion"
+			string="Contrato Mutuo"
+			report_type="qweb-pdf"
+			name="financiera_cheques.contrato_mutuo_cliente"
+			attachment_use="False"
+			file="financiera_cheques.contrato_mutuo_cliente"
+		/>
+
+    <template id="contrato_mutuo_cliente">
         <!--<t t-call="report.external_layout">-->
             <t t-foreach="docs" t-as="o">
             <div align="justify" class="page" style="font-size:20px;padding-top:0px;margin-top:0px">
@@ -222,6 +253,140 @@
             </t>
     </template>
 
+    <report 
+			id="custom_descuento_cheques_pago_diferido_con_recurso"
+			model="liquidacion"
+			string="Contrato Descuento de cheques de pago diferido con recurso"
+			report_type="qweb-pdf"
+			name="financiera_cheques.descuento_cheques_pago_diferido_con_recurso"
+			attachment_use="False"
+			file="financiera_cheques.descuento_cheques_pago_diferido_con_recurso"
+		/>
+
+    <template id="descuento_cheques_pago_diferido_con_recurso">
+        <!--<t t-call="report.external_layout">-->
+            <t t-foreach="docs" t-as="o">
+            <div align="justify" class="page" style="font-size:18px;padding-top:0px;margin-top:0px">
+                <p align="center"><b>DESCUENTO DE CHEQUES DE PAGO DIFERIDO CON RECURSO</b></p>
+                <p align="right"><span t-field="o.company_id.liquidacion_config_id.mutuante_domicilio_ciudad"/> a los .... días de .............. de ..........</p>
+                <p>
+                    Sres.<br/>
+                    <span t-field="o.company_id.liquidacion_config_id.mutuante_nombre"/><br/>
+                    <span t-field="o.company_id.liquidacion_config_id.mutuante_domicilio_ciudad"/>,<br/>
+                    De mi consideración:<br/><br/>
+                </p>
+                <p>
+                    <span t-field="o.partner_id.name"/> 
+                    <span t-if="o.partner_id.main_id_category_id.code in ['CUIT','CUIL']">
+                        <span t-field="o.partner_id.main_id_category_id"/> Nº <t t-esc="o.partner_id.main_id_number[:2]"/>-<t t-esc="o.partner_id.main_id_number[2:10]"/>-<t t-esc="o.partner_id.main_id_number[10:11]"/>
+                    </span>
+                    <span t-if="o.partner_id.main_id_category_id.code not in ['CUIT','CUIL']">
+                        <span t-field="o.partner_id.main_id_category_id"/> Nº <span t-field="o.partner_id.main_id_number"/>
+                    </span>, con domicilio en <span t-field="o.partner_id.street"/> de la Ciudad de <span t-field="o.partner_id.city"/>, Provincia de <span t-field="o.partner_id.state_id.name"/> (en adelante el “CEDENTE”) se dirige a 
+                    ustedes, <span t-field="o.company_id.liquidacion_config_id.mutuante_nombre"/> CUIT Nº <span t-field="o.company_id.liquidacion_config_id.mutuante_cuit"/> con domicilio en la calle <span t-field="o.company_id.liquidacion_config_id.mutuante_domicilio_calle"/> de 
+                    <span t-field="o.company_id.liquidacion_config_id.mutuante_domicilio_ciudad"/> (en adelante el “CESIONARIO” <t t-if="o.company_id.liquidacion_config_id.mutuante_nombre_fantasia">o "<span t-field="o.company_id.liquidacion_config_id.mutuante_nombre_fantasia"/>"</t>
+                    indistintamente y en conjunto, las “PARTES”), a los efectos de ceder los cheques que se detallan en el anexo i (en adelante los “CPDS”). Para el caso de acceder a lo 
+                    solicitado nos regiremos por el siguiente articulado:<br/><br/>
+                </p>
+                <p>
+                    PRIMERO. Objeto: El CEDENTE es legítimo tenedor de los CPDS, cuya suma asciende a $<span t-field="o.total"/> (<span t-field="o.mutuo_monto_texto"/>) que forma parte de la misma. Los mismos se ceden y transfieren con 
+                    recurso a favor del CESIONARIO en virtud de estar librados a su favor. El CESIONARIO podrá aceptar todos o algunos de los CPDS (los “CPDS Aceptados”), a su exclusivo 
+                    criterio. Para el caso que el CESIONARIO no aceptara todos los CPDS se entenderá que hay una aceptación parcial.<br/>
+                    SEGUNDO. Precio: El precio de la presente operación será el que resulte de calcular el valor actual neto de los CPDS Aceptados a una Tasa Nominal Anual (TNA) adelantada 
+                    del ____, siendo la Tasa Efectiva Anual (TEA) del ____%. Costo Financiero Total (CFT) de la operación _______% (conceptos computables: tasa de interés, gastos de liquidación, 
+                    comisión de valor al cobro, gastos por cheque, aviso de vencimiento, gastos de notificación, gastos de administración y seguimiento e intereses compensatorios).<br/><br/>
+
+                    Dicho precio será depositado o transferido por el CESIONARIO en su cuenta corriente Nº _________________ CBU ___________________________ ALIAS _____________________ que el 
+                    CEDENTE posee en ______________________________ (en adelante la "Cuenta Corriente").<br/>
+                    
+                    TERCERO. Garantía de Evicción: El CEDENTE declara y garantiza: en caso de corresponder, que la totalidad de los CPDS no se encuentran afectados por embargos, inhibiciones ni 
+                    prohibiciones de endoso de ningún tipo y que se encuentra en la plenitud de la posesión y propiedad de todos los valores, como asimismo que no ha percibido pagos a cuenta 
+                    ni prestación alguna imputable a tales CPDS por parte de los libradores o endosantes; que todos los CPDS son originales, auténticos y exigibles en los términos y condiciones 
+                    que resultan de los mismos; que las firmas de quienes emitieron a su favor o les trasmitieron los CPDS son auténticas y corresponden a quienes están facultados para ello; y 
+                    que su emisión o endoso responde a una causa legítima y onerosa por el pago de operaciones en firme del giro comercial del CEDENTE. En consecuencia, el CEDENTE responderá por 
+                    la existencia y legitimidad de las obligaciones de pago que emergen de todos los CPDS y se responsabiliza por su saneamiento y evicción.<br/>
+                    CUARTO. Banco de Datos: El CESIONARIO queda autorizado para incorporar los datos que surgen de la presente en sus bases en los términos de la Ley 25.326 (sus complementarias y 
+                    modificatorias). Por lo que podrá suministrar, exclusivamente con fines crediticios, la información descripta en esta solicitud y la que sobrevenga por la operación crediticia 
+                    solicitada (sus movimientos, cumplimiento e historial), al BCRA y a los Banco de Datos a los que se adhiera; entidades que a su vez, dentro de la normativa aplicable en la 
+                    materia, podrán informarla a terceros que la requieran.<br/>
+
+                    QUINTO: El CEDENTE tendrá derecho a revocar la presente durante el plazo de 10 (diez) días hábiles contados a partir de la fecha de la disponibilidad efectiva de los fondos 
+                    solicitados, notificando de manera fehaciente, siempre y cuando no haya dispuesto de los fondos allí depositados. La revocación será sin costo ni responsabilidad alguna para  
+                    el CEDENTE en la medida que no haya hecho uso de los fondos solicitados. <br/>
+                    SEXTO. Declaración Jurada: <br/>
+                    6.1. EL CEDENTE declara que SI/NO (1) se encuentra inscripto en el registro del BCRA establecido por la Comunicación “A” 5603: “Registro de Otros Proveedores No Financieros 
+                    de Crédito”, y que en caso de no encontrarse inscripto en el registro indicado precedentemente, la firma no dará asistencia crediticia al sector de consumo.<br/>
+                    6.2. EL CEDENTE declara bajo juramento que, si el destino de los fondos y valores descontados en la operación del día de la fecha son utilizados para proveer servicios 
+                    financieros, será conforme a lo dispuesto por el BCRA en la Comunicación “A” 5593, con sus modificatorias y complementarias.<br/>
+                    6.3. EL CEDENTE declara bajo juramento que los CPDS objeto de la presente han sido adquiridos por nuestra firma en cumplimiento con la normativa vigente, incluyendo la 
+                    Resolución Nº 5450 del Instituto Nacional de Asociativismo y Economía Social que depende del Ministerio de Desarrollo Social.<br/>
+                    SEPTIMO. Domicilio y Jurisdicción: En caso de ser aceptada la presente, el CEDENTE y el CESIONARIO constituyen domicilio en los lugares indicados en el encabezamiento de 
+                    la presente, donde serán válidas todas las notificaciones que se practiquen, y se someterán a la jurisdicción improrrogable de los Tribunales Ordinarios de 
+                    <span t-field="o.company_id.liquidacion_config_id.mutuo_tribunales"/>.<br/><br/><br/>
+
+
+                    Firma: __________________________<br/>
+                    <span t-field="o.partner_id.name"/><br/>
+                    <span t-if="o.partner_id.main_id_category_id.code in ['CUIT','CUIL']">
+                        <span t-field="o.partner_id.main_id_category_id"/> Nº <t t-esc="o.partner_id.main_id_number[:2]"/>-<t t-esc="o.partner_id.main_id_number[2:10]"/>-<t t-esc="o.partner_id.main_id_number[10:11]"/><br/>
+                    </span>
+                    <span t-if="o.partner_id.main_id_category_id.code not in ['CUIT','CUIL']">
+                        <span t-field="o.partner_id.main_id_category_id"/> Nº <span t-field="o.partner_id.main_id_number"/><br/>
+                    </span> 
+                    Domicilio: <span t-field="o.partner_id.street"/> de <span t-field="o.partner_id.city"/>,<br/>
+                    <span t-field="o.partner_id.state_id.name"/><br/>
+                </p>
+                <div style="page-break-after:always;"></div>
+                <p align="center"><b>ANEXO I</b></p>
+                <table class="table table-condensed">
+                    <caption>CPDS</caption>
+                    <thead>
+                        <tr>
+                            <th style="width:15%;">Banco</th>
+                            <th style="width:15%;">Nro Cheque</th>
+                            <th style="width:15%;">Vencimiento</th>
+                            <th style="width:15%;">Importe</th>
+                            <th style="width:15%;">Firmante</th>
+                        </tr>
+                    </thead>
+                    <tbody class="invoice_tbody">
+                        <tr t-foreach="o.payment_ids" t-as="l">
+                            <td style="width:15%;"><span t-field="l.check_bank_id"/></td>
+                            <td style="width:15%;"><span t-field="l.check_number"/></td>
+                            <td style="width:15%;"><span t-field="l.check_payment_date"/></td>
+                            <td style="width:15%;"><span t-field="l.amount"/></td>
+                            <td style="width:25%;"><span t-field="l.check_firmante_id"/></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>
+                    Firma: __________________________<br/>
+                    <span t-field="o.partner_id.name"/><br/>
+                    <span t-if="o.partner_id.main_id_category_id.code in ['CUIT','CUIL']">
+                        <span t-field="o.partner_id.main_id_category_id"/> Nº <t t-esc="o.partner_id.main_id_number[:2]"/>-<t t-esc="o.partner_id.main_id_number[2:10]"/>-<t t-esc="o.partner_id.main_id_number[10:11]"/><br/>
+                    </span>
+                    <span t-if="o.partner_id.main_id_category_id.code not in ['CUIT','CUIL']">
+                        <span t-field="o.partner_id.main_id_category_id"/> Nº <span t-field="o.partner_id.main_id_number"/><br/>
+                    </span> 
+                    Domicilio: <span t-field="o.partner_id.street"/> de <span t-field="o.partner_id.city"/>,<br/>
+                    <span t-field="o.partner_id.state_id.name"/><br/>
+                </p>
+
+
+            </div>
+            </t>
+    </template>
+
+    <report 
+			id="custom_resumen_cta_cte_cliente"
+			model="res.partner"
+			string="Cuenta Corriente - Cliente"
+			report_type="qweb-pdf"
+			name="financiera_cheques.resumen_cta_cte_cliente"
+			attachment_use="False"
+			file="financiera_cheques.resumen_cta_cte_cliente"
+		/>
+
     <template id="resumen_cta_cte_cliente">
         <!-- <t t-call="report.external_layout"> -->
             <t t-foreach="docs" t-as="o">
@@ -258,6 +423,16 @@
             </t>
         <!-- </t> -->
     </template>
+
+    <report 
+			id="custom_resumen_cta_cte_proveedor"
+			model="res.partner"
+			string="Cuenta Corriente - Proveedor"
+			report_type="qweb-pdf"
+			name="financiera_cheques.resumen_cta_cte_proveedor"
+			attachment_use="False"
+			file="financiera_cheques.resumen_cta_cte_proveedor"
+		/>
 
     <template id="resumen_cta_cte_proveedor">
         <!--<t t-call="report.external_layout">-->

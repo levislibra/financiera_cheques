@@ -13,12 +13,6 @@ import logging
 from openerp.osv import orm
 _logger = logging.getLogger(__name__)
 
-class firmante(models.Model):
-	_name = 'firmante'
-	_description = 'Firmante del cheque'
-	name = fields.Char("Nombre", size=30, required=True)
-	cuit = fields.Char("Cuit", size=20, required=True)
-
 class check_scanner(models.Model):
     _name = 'check.scanner'
     _description = 'Escaner del numero de 29 digitos y su procesamiento'
@@ -43,193 +37,6 @@ class check_scanner(models.Model):
         else:
             raise ValidationError("El escaner no tiene 29 caracteres.")
 
-class AccountPayment(models.Model):
-    # This OpenERP object inherits from cheques.de.terceros
-    # to add a new float field
-    _inherit = 'account.payment'
-    _name = 'account.payment'
-    _description = 'Opciones extras de cheques para calculo de financiera'
-
-    check_liquidacion_id = fields.Many2one('liquidacion', 'Liquidacion id')
-    check_firmante_id = fields.Many2one('firmante', 'Firmante')
-    check_fecha_acreditacion = fields.Date('Acreditacion')
-    check_dias = fields.Integer(string='Dias', compute='_check_dias')
-    check_tasa_fija = fields.Float('Impuesto')
-    check_monto_fijo = fields.Float(string='Monto', compute='_check_monto_fijo')
-    check_tasa_mensual = fields.Float('Interes')
-    check_monto_mensual = fields.Float(string='Monto', compute='_check_monto_mensual')
-    check_vat_tax_id = fields.Many2one('account.tax', 'Tasa de IVA', readonly=True)
-    check_monto_iva = fields.Float('IVA', compute='_check_monto_iva')
-    check_monto_costo = fields.Float("Costo", compute='_compute_costo')
-    check_monto_neto = fields.Float(string='Neto', compute='_check_monto_neto')
-    check_scanner_id = fields.Many2one('check.scanner', 'Escaner')
-
-    # check_number_char = fields.Char("Numero")
-
-    @api.one
-    @api.depends('amount', 'check_monto_fijo', 'check_monto_mensual', 'check_monto_iva')
-    def _compute_costo(self):
-        self.check_monto_costo = round(self.check_monto_fijo + self.check_monto_mensual + self.check_monto_iva, 2)
-
-    # @api.one
-    # @api.onchange('check_number_char')
-    # def _change_check_number_char(self):
-    #     try:
-    #         self.check_number = int(self.check_number_char)
-    #     except Exception as e:
-    #         raise UserError("Error al introducir el numero del cheque.")
-
-
-    # check_amount_char = fields.Char('Importe')
-
-    # @api.one
-    # @api.onchange('check_amount_char')
-    # def _check_check_amount_char(self):
-    #     try:
-    #         self.amount = float(self.check_amount_char)
-    #     except Exception as e:
-    #         self.amount = float(self.check_amount_char)
-    #         raise UserError("Error al introducir el importe del cheque.")
-
-
-    @api.model
-    def create(self, values):
-        if values.has_key('check_liquidacion_id') and values['check_liquidacion_id'] != False:
-            liquidacion_id = self.env['liquidacion'].browse(values['check_liquidacion_id'])
-            values['payment_group_id'] = liquidacion_id.payment_group_id.id
-
-#        if values.has_key('amount') and values['amount'] == False:
-#            values['amount'] = 1
-
-        rec = super(AccountPayment, self).create(values)
-        return rec
-
-    @api.model
-    def default_get(self, fields):
-        rec = super(AccountPayment, self).default_get(fields)
-        context = dict(self._context or {})
-        active_model = context.get('active_model')
-        active_ids = context.get('active_ids')
-        active_id = context.get('active_id')
-        action = context.get('action')
-
-        if active_model == 'liquidacion':
-            fecha = context.get('fecha')
-            partner_id = context.get('partner_id')
-            journal_id = context.get('journal_id')
-            receiptbook_id = context.get('receiptbook_id')
-            payment_method_id = context.get('payment_method_id')
-            currency_id = context.get('currency_id')
-            vat_tax_id = context.get('vat_tax_id')
-
-            cr = self.env.cr
-            uid = self.env.uid
-            payment_method_obj = self.pool.get('account.payment.method')
-            payment_method_id = payment_method_obj.search(cr, uid, [('code', '=', 'manual'), ('payment_type', '=', 'inbound')])[0]
-            liquidacion_id = self.env[active_model].browse(active_id)
-            partner_id = self.env['res.partner'].browse(partner_id)
-
-            if action == 'cheque_nuevo':
-                rec.update({
-                    #'name': "Liquidacion #" + str(liquidacion_id.id).zfill(6) + " - cheque",
-                    #'communication': "Liquidacion #" + str(liquidacion_id.id).zfill(6) + " - cheque",
-                    'payment_type': 'inbound',
-                    'payment_type_copy': 'inbound',
-                    'partner_type': 'customer',
-                    'partner_id': partner_id.id,
-                    'journal_id': journal_id,
-                    'payment_method_code': 'manual',
-                    'check_type': 'third_check',
-                    'receiptbook_id': receiptbook_id,
-                    'payment_date': fecha,
-                    'currency_id': currency_id,                    
-                    'payment_method_id': payment_method_id,
-                    'check_vat_tax_id': vat_tax_id,
-                    'check_tasa_fija': partner_id.tasa_fija,
-                    'check_tasa_mensual': partner_id.tasa_mensual,
-                })
-            elif action == 'realizar_pago':
-                liquidacion_id = self.env[active_model].browse(active_id)
-                amount = liquidacion_id.get_neto()
-                fecha = liquidacion_id.fecha
-                rec['payment_type'] = 'outbound'
-                rec['partner_type'] = 'customer'
-                rec['partner_id'] = partner_id.id
-                rec['amount'] = amount
-                rec['payment_date'] = fecha
-        return rec
-
-    @api.onchange('check_scanner_id')
-    def set_scanner(self):
-        self.check_number = int(self.check_scanner_id.bank_nro)
-
-
-    @api.one
-    @api.depends('check_liquidacion_id.fecha', 'check_fecha_acreditacion')
-    def _check_dias(self):
-        if len(self.check_liquidacion_id) > 0 and self.check_liquidacion_id.fecha and self.check_fecha_acreditacion:
-            formato_fecha = "%Y-%m-%d"
-            fecha_inicial = datetime.strptime(str(self.check_liquidacion_id.fecha), "%Y-%m-%d")
-            fecha_final = datetime.strptime(str(self.check_fecha_acreditacion), "%Y-%m-%d")
-            diferencia = fecha_final - fecha_inicial
-            if diferencia.days > 0:
-                self.check_dias = diferencia.days
-            else:
-                self.check_dias = 0
-
-    @api.one
-    @api.depends('check_monto_mensual', 'check_vat_tax_id')
-    def _check_monto_iva(self):
-        if self.check_vat_tax_id != None:
-    	   self.check_monto_iva = self.check_monto_mensual * (self.check_vat_tax_id.amount / 100)
-
-    @api.one
-    @api.depends('amount', 'check_tasa_fija')
-    def _check_monto_fijo(self):
-    	self.check_monto_fijo = round(self.amount * (self.check_tasa_fija / 100), 2)
-
-    @api.one
-    @api.depends('amount', 'check_tasa_mensual', 'check_dias')
-    def _check_monto_mensual(self):
-    	self.check_monto_mensual = round(self.check_dias * ((self.check_tasa_mensual / 30) / 100) * self.amount,2)
-
-
-    @api.one
-    @api.depends('amount', 'check_monto_fijo', 'check_monto_mensual', 'check_monto_iva')
-    def _check_monto_neto(self):
-    	self.check_monto_neto = round(self.amount - self.check_monto_fijo - self.check_monto_mensual - self.check_monto_iva, 2)
-
-    @api.onchange('check_payment_date')
-    def _check_fecha_acreditacion(self):
-        if self.check_payment_date:
-            configuracion_id = self.env['liquidacion.config'].browse(1)
-            dias_acreditacion_compra = configuracion_id.dias_acreditacion_compra
-            tipo_dias_acreditacion_compra = configuracion_id.tipo_dias_acreditacion_compra
-            fecha_inicial = datetime.strptime(self.check_payment_date, "%Y-%m-%d")
-            if tipo_dias_acreditacion_compra == 'continuos':
-                fecha_relativa = relativedelta.relativedelta(days=dias_acreditacion_compra)
-                self.check_fecha_acreditacion = fecha_inicial + fecha_relativa
-            elif tipo_dias_acreditacion_compra == 'habiles':
-                if dias_acreditacion_compra > 0:
-                    cr = self.env.cr
-                    uid = self.env.uid
-                    dias_no_habiles = 0
-                    i = 1
-                    while dias_acreditacion_compra != 0:
-                        fecha_relativa = relativedelta.relativedelta(days=i)
-                        check_fecha = fecha_inicial + fecha_relativa
-                        es_sabado = check_fecha.weekday() == 5
-                        es_domingo = check_fecha.weekday() == 6
-                        es_feriado = len(self.pool.get('feriados.feriados.dia').search(cr, uid, [('date', '=', check_fecha)])) > 0
-                        i += 1
-                        if es_sabado or es_domingo or es_feriado:
-                            pass
-                        else:
-                            dias_acreditacion_compra -= 1
-                    self.check_fecha_acreditacion = check_fecha
-                else:
-                    self.check_fecha_acreditacion = fecha_inicial
-
 
 # Clase Obsoleta - Usamos Wizards
 class LiquidacionPagar(models.Model):
@@ -240,66 +47,6 @@ class LiquidacionPagar(models.Model):
     payment_amount = fields.Float('Monto')
     payment_communication = fields.Char('Descripcion')
     liquidacion_id = fields.Many2one('liquidacion', 'Liquidacion')
-
-    # @api.model
-    # def default_get(self, fields):
-    #     rec = super(LiquidacionPagar, self).default_get(fields)
-    #     context = dict(self._context or {})
-    #     active_model = context.get('active_model')
-    #     active_ids = context.get('active_ids')
-    #     active_id = context.get('active_id')
-
-    #     cr = self.env.cr
-    #     uid = self.env.uid
-    #     liquidacion_obj = self.pool.get('liquidacion')
-    #     liquidacion_id = liquidacion_obj.browse(cr, uid, active_id, context=context)
-    #     rec.update({
-    #         'payment_date': liquidacion_id.fecha,
-    #         'payment_amount': abs(liquidacion_id.saldo),
-    #         'liquidacion_id': active_id,
-    #         'payment_communication': "Pago liquidacion " + str(liquidacion_id.id).zfill(5),
-    #     })
-    #     return rec
-
-    # @api.one
-    # def confirmar_pagar_liquidacion(self):
-    #     currency_id = self.env.user.company_id.currency_id.id
-    #     cr = self.env.cr
-    #     uid = self.env.uid
-
-    #     #Pago al cliente
-    #     payment_method_obj = self.pool.get('account.payment.method')
-    #     payment_method_id = payment_method_obj.search(cr, uid, [('code', '=', 'manual'), ('payment_type', '=', 'outbound')])[0]
-    #     ap_values = {
-    #         'payment_type': 'outbound',
-    #         'partner_type': 'customer',
-    #         'partner_id': self.liquidacion_id.partner_id.id,
-    #         'amount': self.payment_amount,
-    #         'payment_date': self.payment_date,
-    #         'journal_id': self.payment_journal_id.id,
-    #         'payment_method_code': 'manual',
-    #         'currency_id': currency_id,
-    #         'payment_method_id': payment_method_id,
-    #         'cummunication': self.payment_communication,
-    #         'description_financiera': "Liquidacion #" + str(self.liquidacion_id.id).zfill(8) + " - Pago al cliente",
-    #     }
-    #     payment_group_receiptbook_obj = self.pool.get('account.payment.receiptbook')
-    #     payment_group_receiptbook_id = payment_group_receiptbook_obj.search(cr, uid, [('sequence_type', '=', 'automatic'), ('partner_type', '=', 'customer')])[0]
-    #     apg_values = {
-    #         'payment_date': self.payment_date,
-    #         'company_id': 1,
-    #         'partner_id': self.liquidacion_id.partner_id.id,
-    #         'currency_id': currency_id,
-    #         'payment_ids': [(0,0,ap_values)],
-    #         'receiptbook_id': payment_group_receiptbook_id,
-    #         'partner_type': 'customer',
-    #         'account_internal_type': 'payable',
-    #         #'debt_move_line_ids': self.liquidacion_id._debt_not_reconcilie()[0],
-    #         'communication': self.payment_communication,
-    #     }
-    #     new_payment_group_id = self.env['account.payment.group'].create(apg_values)
-    #     new_payment_group_id.post()
-    #     self.liquidacion_id.payment_group_ids = [new_payment_group_id.id]
 
 class Liquidacion(models.Model):
     _name = 'liquidacion'
@@ -330,6 +77,7 @@ class Liquidacion(models.Model):
     total_pagos = fields.Float('Total pagos')
     # Campo obsoleto
     debt_move_line_ids = fields.One2many('account.move.line', 'liquidacion_id', 'Deuda a pagar', compute='_update_debt', default=None)
+    total = fields.Float('Total', compute='_compute_total')
     saldo = fields.Float('Saldo', compute='_compute_saldo')
 
     tasa_fija = fields.Float('Tasa fija', compute='compute_tasa_fija')
@@ -344,6 +92,7 @@ class Liquidacion(models.Model):
     property_account_receivable_id = fields.Integer('Default debit id', compute='_compute_receivable')
     property_account_payable_id = fields.Integer('Default Credit id', compute='_compute_payable')
     partner_type = fields.Selection([('customer', 'Cliente'), ('supplier', 'Proveedor')], string='Tipo de partner', compute='_compute_partner_type', readonly=True)
+    company_id = fields.Many2one('res.company', 'Empresa', default=lambda self: self.env['res.company']._company_default_get('liquidacion'))
     # Mutuo
     mutuante_nombre = fields.Char('Mutuante')
     mutuante_cuit = fields.Char('CUIT/DNI')
@@ -554,6 +303,10 @@ class Liquidacion(models.Model):
             for payment_id in payment_group_id.payment_ids:
                 neto += abs(payment_id.amount)
         return neto
+
+    @api.one
+    def _compute_total(self):
+        self.total = self.get_bruto()
 
     @api.one
     def _compute_saldo(self):
@@ -980,73 +733,6 @@ class Liquidacion(models.Model):
     def _compute_mutuo_monto_texto(self):
         self.mutuo_monto_texto = amount_to_text_es_MX.get_amount_to_text(self, self.get_bruto(), 'centavos', 'pesos con ')
 
-    # Metodo Obsoleto - Reemplazado por wizard
-    # @api.multi
-    # def pagar_liquidacion(self):
-    #     if self.saldo <= 0:
-    #         raise UserError("El saldo de la liquidacion debe ser mayor a cero.")
-    #     else:
-    #         cr = self.env.cr
-    #         uid = self.env.uid
-    #         view_ref = self.pool.get('ir.model.data').get_object_reference(cr, uid, 'financiera_cheques', 'pagar_liquidacion_view')
-    #         view_id = view_ref and view_ref[1] or False,
-
-    #         return {
-    #             'type': 'ir.actions.act_window',
-    #             'name': 'Registrar Pago Liquidacion',
-    #             'view_mode': 'form',
-    #             'view_type': 'form',
-    #             'view_id': view_id,
-    #             'res_model': 'liquidacion.pago',
-    #             'nodestroy': True,
-    #             'target': 'new',
-    #             #'search_view_id': sale_order_tree,
-    #         }
-
-class LiquidacionConfig(models.Model):
-    _name = 'liquidacion.config'
-
-    name = fields.Char('Nombre', defualt='Configuracion general', readonly=True, required=True)
-    journal_compra_id = fields.Many2one('account.journal', 'Diario de compra')
-    journal_venta_id = fields.Many2one('account.journal', 'Diario de venta')
-    journal_cartera_id = fields.Many2one('account.journal', 'Diario de cheques')
-    automatic_validate = fields.Boolean('Validacion automatica de facturas', default=True)
-    dias_acreditacion_compra = fields.Integer('Dias de acreditacion en compra')
-    tipo_dias_acreditacion_compra = fields.Selection([('habiles', 'Habiles'), ('continuos', 'Continuos')], default='habiles', string='Tipo de dias')
-    vat_tax2_id = fields.Many2one('account.tax', 'Tasa de IVA Imp Deb y Cred.', domain="[('type_tax_use', '=', 'sale')]")
-    fiscal_position_id = fields.Many2one('account.fiscal.position', 'Posicion Fiscal')
-    # Mutuo
-    mutuante_nombre = fields.Char('Mutuante')
-    mutuante_cuit = fields.Char('CUIT/DNI')
-    mutuante_domicilio_calle = fields.Char('Domicilio calle')
-    mutuante_domicilio_ciudad = fields.Char('Domicilio ciudad')
-
-
-# class ExtendsAccountInvoice(models.Model):
-#     _name = 'account.invoice'
-#     _inherit = 'account.invoice'
-
-#     @api.one
-#     def _compute_amount(self):
-#         rec = super(ExtendsAccountInvoice, self)._compute_amount()
-#         amount_tax = 0
-#         for line in self.tax_line_ids:
-#             if line.amount > 0:
-#                 # 0.005 se redonde hacia abajo en AFIP no asi en python
-#                 # => restar 0.001:
-#                 # desde 0.000 a 0.005 - 0.001 = 0.00
-#                 # desde 0.006 a 0.009 - 0.001 = 0.01
-#                 line.amount = line.amount - 0.001
-#                 amount_tax += line.amount
-#         self.amount_tax = amount_tax
-#         self.amount_total = self.amount_untaxed + self.amount_tax
-
-# class ExtendsAccountInvoiceTax(models.Model):
-#     _name = 'account.invoice.tax'
-#     _inherit = 'account.invoice.tax'
-
-#     amount = fields.Monetary(digits=(16,2))
-
 class ExtendsPaymentGroup(models.Model):
     _name = 'account.payment.group'
     _inherit = 'account.payment.group'
@@ -1286,4 +972,3 @@ class ExtendsAccountCheck(models.Model):
             'res_id': invoice.id,
             'type': 'ir.actions.act_window',
         }
-
