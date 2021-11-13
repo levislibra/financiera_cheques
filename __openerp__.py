@@ -41,6 +41,7 @@
         'views/reports.xml',
         'data/defaultdata.xml',
         'wizards/financiera_cheques_wizard_view.xml',
+        'wizards/financiera_cheque_opciones_wizard_view.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

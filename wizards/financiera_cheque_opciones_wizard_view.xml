@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+
+    <record id="cheque_opciones_wizard" model="ir.ui.view">
+        <field name="name">Pago/Cobro</field>
+        <field name="model">cheque.opciones.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="date" invisible="1"/>
+                    <field name="neto"/>
+                    <button string="Calcular Monto" name="compute_monto" type="object" class="oe_highlight"/>
+                </group>
+                <footer>
+                    <button string="Cancel" class="oe_right" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

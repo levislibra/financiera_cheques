@@ -4,11 +4,7 @@ from openerp import models, fields, api
 import time
 from datetime import datetime, timedelta
 from dateutil import relativedelta
-from openerp.exceptions import UserError
-from openerp.exceptions import ValidationError
 from openerp.tools.translate import _
-import amount_to_text_es_MX
-from pprint import pprint
 import logging
 from openerp.osv import orm
 _logger = logging.getLogger(__name__)
@@ -21,6 +17,7 @@ class AccountPayment(models.Model):
     _description = 'Opciones extras de cheques para calculo de financiera'
 
     check_liquidacion_id = fields.Many2one('liquidacion', 'Liquidacion id')
+    check_select = fields.Boolean('Seleccionar')
     check_firmante_id = fields.Many2one('firmante', 'Firmante')
     check_fecha_acreditacion = fields.Date('Acreditacion')
     check_dias = fields.Integer(string='Dias', compute='_check_dias')
@@ -200,3 +197,20 @@ class AccountPayment(models.Model):
                 else:
                     self.check_fecha_acreditacion = fecha_inicial
 
+    @api.multi
+    def wizard_opciones_cheque(self):
+        params = {
+            'cheque_id': self.id,
+        }
+        view_id = self.env['cheque.opciones.wizard']
+        new = view_id.create(params)
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Opciones cheque',
+            'res_model': 'cheque.opciones.wizard',
+            'view_type': 'form',
+            'view_mode': 'form',
+            'res_id'    : new.id,
+            'view_id': self.env.ref('financiera_cheques.cheque_opciones_wizard', False).id,
+            'target': 'new',
+        }

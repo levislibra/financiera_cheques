@@ -230,8 +230,16 @@
                                 </tree>
                             </field>
                             <!-- ('journal_id', '=', journal_venta_id),  -->
+                            <group>
+                              <group col="3">
+                                <field name="neto_cheque"/>
+                                <button string="Calcular importe cheque/s" name="caclular_importe_cheques" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': [('type_operation', '=', 'venta')]}" class="oe_highlight" type="object" />
+                              </group>
+                              <group></group>
+                            </group>
                             <field name="payment_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': [('type_operation', '=', 'venta')]}" context="{'active_model': 'liquidacion', 'action': 'cheque_nuevo', 'fecha': fecha, 'partner_id': partner_id, 'journal_id': journal_id, 'receiptbook_id': receiptbook_id, 'payment_method_id': payment_method_id, 'currency_id': currency_id, 'vat_tax_id': vat_tax_id, 'active_id': id}" >
                                 <tree string="Cheques" editable="bottom" >
+                                    <field name="check_select"/>
                                     <field name="partner_type" invisible="1"/>
                                     <field name="currency_id" invisible="1"/>
                                     <field name="payment_date" invisible="1"/>
@@ -260,6 +268,7 @@
                                     <field name="check_monto_iva" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
                                     <field name="check_monto_costo" sum="Total costo"/>
                                     <field name="check_monto_neto" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
+                                    <button string="Opciones" name="wizard_opciones_cheque" type="object" class="oe_highlight"/>
                                 </tree>
                             </field>
                         </page>

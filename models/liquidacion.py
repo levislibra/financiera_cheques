@@ -13,41 +13,6 @@ import logging
 from openerp.osv import orm
 _logger = logging.getLogger(__name__)
 
-class check_scanner(models.Model):
-    _name = 'check.scanner'
-    _description = 'Escaner del numero de 29 digitos y su procesamiento'
-
-    name = fields.Char('Numero')
-    bank_codigo = fields.Char('ID Banco')
-    bank_suc = fields.Char('Nro de sucursal')
-    bank_cp = fields.Char('Codigo postal')
-    bank_nro = fields.Char('Nro de cheque')
-    bank_cuenta_corriente = fields.Char('Cuenta Corriente')
-    bank_imagen_frente = fields.Binary('Imagen frontal')
-    bank_imagen_posterior = fields.Binary('Imagen posterior')
-
-    @api.onchange('name')
-    def set_values(self):
-        if self.name != None and len(self.name) == 29:
-            self.bank_codigo = self.name[0:3]
-            self.bank_suc = self.name[3:6]
-            self.bank_cp = self.name[6:10]
-            self.bank_nro = self.name[10:18]
-            self.bank_cuenta_corriente = self.name[18:29]
-        else:
-            raise ValidationError("El escaner no tiene 29 caracteres.")
-
-
-# Clase Obsoleta - Usamos Wizards
-class LiquidacionPagar(models.Model):
-    _name = 'liquidacion.pago'
-
-    payment_date = fields.Date('Fecha de pago', required=True)
-    payment_journal_id = fields.Many2one('account.journal', 'Metodo de pago', domain="[('type', 'in', ('bank', 'cash'))]")
-    payment_amount = fields.Float('Monto')
-    payment_communication = fields.Char('Descripcion')
-    liquidacion_id = fields.Many2one('liquidacion', 'Liquidacion')
-
 class Liquidacion(models.Model):
     _name = 'liquidacion'
 
@@ -104,6 +69,8 @@ class Liquidacion(models.Model):
     mutuario_domicilio_calle = fields.Char('Domicilio calle')
     mutuario_domicilio_ciudad = fields.Char('Domicilio ciudad')
     mutuo_monto_texto = fields.Char('Monto', compute='_compute_mutuo_monto_texto')
+    # Calcular cheque
+    neto_cheque = fields.Float('Neto del cheque/s', digits=(16,2))
 
     @api.model
     def create(self, values):
@@ -732,6 +699,54 @@ class Liquidacion(models.Model):
     @api.one
     def _compute_mutuo_monto_texto(self):
         self.mutuo_monto_texto = amount_to_text_es_MX.get_amount_to_text(self, self.get_bruto(), 'centavos', 'pesos con ')
+
+    @api.one
+    def caclular_importe_cheques(self):
+        for cheque_id in self.payment_ids:
+            tf = cheque_id.check_tasa_fija/100
+            tv_dias = cheque_id.check_dias * cheque_id.check_tasa_mensual/30/100
+            tv_iva_dias = 0
+            if cheque_id.check_vat_tax_id != None:
+                tv_iva_dias = cheque_id.check_vat_tax_id.amount/100 * tv_dias
+            nuevo_importe_cheque = self.neto_cheque / (1 - tf - tv_dias - tv_iva_dias)
+            cheque_id.amount = nuevo_importe_cheque
+            cheque_id.check_select = False
+
+
+class check_scanner(models.Model):
+    _name = 'check.scanner'
+    _description = 'Escaner del numero de 29 digitos y su procesamiento'
+
+    name = fields.Char('Numero')
+    bank_codigo = fields.Char('ID Banco')
+    bank_suc = fields.Char('Nro de sucursal')
+    bank_cp = fields.Char('Codigo postal')
+    bank_nro = fields.Char('Nro de cheque')
+    bank_cuenta_corriente = fields.Char('Cuenta Corriente')
+    bank_imagen_frente = fields.Binary('Imagen frontal')
+    bank_imagen_posterior = fields.Binary('Imagen posterior')
+
+    @api.onchange('name')
+    def set_values(self):
+        if self.name != None and len(self.name) == 29:
+            self.bank_codigo = self.name[0:3]
+            self.bank_suc = self.name[3:6]
+            self.bank_cp = self.name[6:10]
+            self.bank_nro = self.name[10:18]
+            self.bank_cuenta_corriente = self.name[18:29]
+        else:
+            raise ValidationError("El escaner no tiene 29 caracteres.")
+
+# Clase Obsoleta - Usamos Wizards
+class LiquidacionPagar(models.Model):
+    _name = 'liquidacion.pago'
+
+    payment_date = fields.Date('Fecha de pago', required=True)
+    payment_journal_id = fields.Many2one('account.journal', 'Metodo de pago', domain="[('type', 'in', ('bank', 'cash'))]")
+    payment_amount = fields.Float('Monto')
+    payment_communication = fields.Char('Descripcion')
+    liquidacion_id = fields.Many2one('liquidacion', 'Liquidacion')
+
 
 class ExtendsPaymentGroup(models.Model):
     _name = 'account.payment.group'
