@@ -703,14 +703,28 @@ class Liquidacion(models.Model):
     @api.one
     def caclular_importe_cheques(self):
         for cheque_id in self.payment_ids:
-            tf = cheque_id.check_tasa_fija/100
-            tv_dias = cheque_id.check_dias * cheque_id.check_tasa_mensual/30/100
-            tv_iva_dias = 0
-            if cheque_id.check_vat_tax_id != None:
-                tv_iva_dias = cheque_id.check_vat_tax_id.amount/100 * tv_dias
-            nuevo_importe_cheque = self.neto_cheque / (1 - tf - tv_dias - tv_iva_dias)
-            cheque_id.amount = nuevo_importe_cheque
-            cheque_id.check_select = False
+            if cheque_id.check_select:
+                tf = cheque_id.check_tasa_fija/100
+                tv_dias = cheque_id.check_dias * cheque_id.check_tasa_mensual/30/100
+                tv_iva_dias = 0
+                if cheque_id.check_vat_tax_id != None:
+                    tv_iva_dias = cheque_id.check_vat_tax_id.amount/100 * tv_dias
+                nuevo_importe_cheque = self.neto_cheque / (1 - tf - tv_dias - tv_iva_dias)
+                cheque_id.amount = nuevo_importe_cheque
+                cheque_id.check_select = False
+
+    @api.one
+    def caclular_tv_cheques(self):
+        for cheque_id in self.payment_ids:
+            if cheque_id.check_select:
+                tf = cheque_id.check_tasa_fija/100
+                # tv_dias = cheque_id.check_dias * cheque_id.check_tasa_mensual/30/100
+                t_iva = 0
+                if cheque_id.check_vat_tax_id != None:
+                    t_iva = cheque_id.check_vat_tax_id.amount/100
+                nueva_tasa_mensual = (self.neto_cheque - cheque_id.amount + cheque_id.amount * tf) / (-cheque_id.amount * cheque_id.check_dias - cheque_id.amount * cheque_id.check_dias * t_iva)
+                cheque_id.check_tasa_mensual = nueva_tasa_mensual * 30 * 100
+                cheque_id.check_select = False
 
 
 class check_scanner(models.Model):

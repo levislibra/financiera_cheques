@@ -230,11 +230,17 @@
                                 </tree>
                             </field>
                             <!-- ('journal_id', '=', journal_venta_id),  -->
-                            <group>
-                              <group col="3">
+                            <group col="4">
+                              <group>
                                 <field name="neto_cheque"/>
+                                <label string=" "/>
                                 <button string="Calcular importe cheque/s" name="caclular_importe_cheques" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': [('type_operation', '=', 'venta')]}" class="oe_highlight" type="object" />
+                                <label string=" "/>
+                                <button string="Calcular tasa mensual cheque/s" name="caclular_tv_cheques" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': [('type_operation', '=', 'venta')]}" class="oe_highlight" type="object" />
                               </group>
+                              <group>
+                              </group>
+                              <group></group>
                               <group></group>
                             </group>
                             <field name="payment_ids" attrs="{'readonly': [('state', '!=', 'cotizacion')], 'invisible': [('type_operation', '=', 'venta')]}" context="{'active_model': 'liquidacion', 'action': 'cheque_nuevo', 'fecha': fecha, 'partner_id': partner_id, 'journal_id': journal_id, 'receiptbook_id': receiptbook_id, 'payment_method_id': payment_method_id, 'currency_id': currency_id, 'vat_tax_id': vat_tax_id, 'active_id': id}" >
@@ -260,9 +266,9 @@
                                     <field name="check_payment_date" required="0"/>
                                     <field name="check_fecha_acreditacion" required="0"/>
                                     <field name="check_dias" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
-                                    <field name="check_tasa_fija" widget="char"/>
+                                    <field name="check_tasa_fija" />
                                     <field name="check_monto_fijo" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
-                                    <field name="check_tasa_mensual" widget="char"/>
+                                    <field name="check_tasa_mensual" />
                                     <field name="check_monto_mensual" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
                                     <field name="check_vat_tax_id"/>
                                     <field name="check_monto_iva" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
