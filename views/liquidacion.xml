@@ -274,7 +274,7 @@
                                     <field name="check_monto_iva" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
                                     <field name="check_monto_costo" sum="Total costo"/>
                                     <field name="check_monto_neto" sum="Total" attrs="{'readonly': [('state', 'in', ('draft', 'en_cartera', 'depositado', 'enpago', 'rechazado'))]}"/>
-                                    <button string="Opciones" name="wizard_opciones_cheque" type="object" class="oe_highlight"/>
+                                    <!-- <button string="Opciones" name="wizard_opciones_cheque" type="object" class="oe_highlight"/> -->
                                 </tree>
                             </field>
                         </page>
